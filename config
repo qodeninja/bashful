@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+
+set -o pipefail
+
+#----------------------
+  CURR_DIR=$(pwd);
+  ABS_SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+#----------------------
+  echo $ABS_SCRIPT_DIR;
+  VERBOSE=true;
+
+source "$ABS_SCRIPT_DIR/lib/funcs.sh";
+
+NEW_PATH="$ABS_SCRIPT_DIR/bin/";
+
+if ! inpath ${NEW_PATH}; then
+  pass "Path is ok"
+  echo $NEW_PATH
+  exit 1
+fi
+
