@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 #----------------------
-
   pass='\xE2\x9C\x93';
   fail='\xE2\x9C\x97';
   arrow='\xE2\x9E\x9C';
@@ -17,7 +16,11 @@
   green=$(tput setaf 2)
   orange=$(tput setaf 3)
   blue=$(tput setaf 12)
-  grey=$(tput setaf 238)
+  cyan=$(tput setaf 14)
+  grey=$(tput setaf 242)
+
+  liner="------------------------------------------------------"
+  alias line="echo ${liner}"
 #----------------------
 
 
@@ -46,3 +49,28 @@ function info() {
   printf "${blue}${arrow} ${underline}${bold}${blue}Note:${reset} ${blue}%s${reset}\n" "$@"
   return 1
 }
+
+
+  function red(){
+    echo -e "${red}${1}${reset}"
+  }
+
+  function green(){
+    echo -e "${green}${1}${reset}"
+  }
+
+  function orange(){
+    echo -e "${orange}${1}${reset}"
+  }
+
+  function cyan(){
+    echo -e "${cyan}${1}${reset}"
+  }
+
+  function grey(){
+    echo -e "${grey}${1}${reset}"
+  }
+
+  function purple(){
+    echo -e "${purple}${1}${reset}"
+  }
