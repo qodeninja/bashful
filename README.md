@@ -1,10 +1,12 @@
 # Bashful
 
- It's great
+ Every good environment does fine
 
- ## Setup
+## Setup
+
+Easy peasy
 
   ```
-    source bashful-config
+    > source bashful-config
 
   ```
