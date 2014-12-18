@@ -1,53 +1,11 @@
 #!/usr/bin/env bash
 
-
 set -o pipefail
+shopt -s expand_aliases
 
-#----------------------
-  CURR_DIR=$(pwd);
-  ABS_SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-  #echo $ABS_SCRIPT_DIR;
-  BASHFUL_EXPECTED_DIR="~/.bashful"
-  VERBOSE=true;
-#----------------------
+export BASHFUL_SETUP_ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "./lib/setup-source.sh";
 
-  source "$ABS_SCRIPT_DIR/lib/funcs.sh";
 
-  NEW_PATH="$ABS_SCRIPT_DIR/bin/";
-
-  if ! inpath ${NEW_PATH}; then
-    add_path $NEW_PATH
-  fi
-
-clear
-
-eval 'alias bashful="$ABS_SCRIPT_DIR/bin/bashful"'
-eval 'alias bf="bashful"'
-eval 'alias bf-install="$ABS_SCRIPT_DIR/bin/bashful-install"'
-eval 'alias bf-help="$ABS_SCRIPT_DIR/bin/bashful-install -H"'
-eval 'alias bf-clean="bf-install -C"'
-eval 'alias bf-conf="source $ABS_SCRIPT_DIR/config"'
-
-echo ${purple};
-command_exists figlet && figlet bashful
-echo ${reset};
-
-purple 'Welcome to the Bashful Installation Utility!'
-if [ ! -d $BASHFUL_EXPECTED_DIR ]
-    then
-      orange 'Bashful is not installed :(\n'
-fi
-
-if [ ! -d $BASHFUL_EXPECTED_DIR ]
-    then
-      grey '>  bf         (bashful utility)'
-      warn ' bf install (setup and install bashful) '
-      grey '>  bf clean   (nuke installed and generated files)'
-    else
-      cyan '>  bf         (bashful utility)'
-      grey '>  bf install (setup and install bashful)'
-      cyan '>  bf clean   (nuke installed and generated files)'
-fi
-
-cyan '>  bf conf    (re-source config and show this message again)'
-cyan '>  bf help    (bashful manual and help doc)'
+install_alias
+bashful config

@@ -1,1 +1,30 @@
 #!/usr/bin/env bash
+
+  source "./lib/interface.sh";
+
+  trap exit_signal EXIT
+
+
+  case "$1" in
+      welcome)
+        bashful_welcome
+        ;;
+      config)
+        bashful_config
+        ;;
+      install)
+        echo 'lets install something yay'
+        echo $PWD
+        ;;
+      help)
+        echo 'lets install something yay'
+        ;;
+      clean)
+        echo 'lets install something yay'
+        ;;
+      *)
+    echo $"Usage: install | config"
+    exit 1
+  esac
+  exit $?
+
