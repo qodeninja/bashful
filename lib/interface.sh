@@ -129,12 +129,7 @@ function check_named_install() {
 
 }
 
-function install_status(){
-  if [ ! -d $BASHFUL_EXPECTED_DIR ]
-  then
-    warn 'Bashful is not installed yet :('
-  fi
-}
+
 
 function init_menu() {
 
@@ -155,14 +150,7 @@ function init_menu() {
 }
 
 
-function init_alias() {
-  eval 'alias bashful="$BASHFUL_ABS_SCRIPT_DIR/bin/bashful"'
-  eval 'alias bf="bashful"'
-  eval 'alias bf-install="$BASHFUL_ABS_SCRIPT_DIR/bin/bashful-install"'
-  eval 'alias bf-help="$BASHFUL_ABS_SCRIPT_DIR/bin/bashful-install -H"'
-  eval 'alias bf-clean="bf-install -C"'
-  eval 'alias bf-conf="source $BASHFUL_ABS_SCRIPT_DIR/config"'
-}
+
 
 #-----------------------------------------------------------------
 

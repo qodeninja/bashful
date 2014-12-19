@@ -4,6 +4,12 @@
 
   trap exit_signal EXIT
 
+  if same_file ./setup /Users/qodeninja/setup-bash; then
+    echo 'same file'
+  else
+    echo 'dunno!'
+  fi
+
 
   case "$1" in
       welcome)

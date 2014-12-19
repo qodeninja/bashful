@@ -62,6 +62,29 @@ source "./lib/term.sh"
 
 #----------------------
 
+#----------------------
+
+  function same_file() {
+
+    if [ -e $1 ] && [ -e $2 ]; then
+      #md5 -q on mac
+      hash1=$(md5 -q ${1})
+      hash2=$(md5 -q ${2})
+      if [ "${hash1}" = "${hash2}" ]; then
+        true
+      else
+        echo "$hash1 = $hash2 ?"
+        false
+      fi
+    else
+      false
+    fi
+
+  }
+
+#----------------------
+
+
 
 #----------------------
 

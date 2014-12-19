@@ -6,6 +6,7 @@ shopt -s expand_aliases
 export BASHFUL_SETUP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source "./lib/setup-source.sh";
 
+
 if [ "$1" = "auto" ] || [ "$1" = "-a" ]; then
   bashful install
 elif [ "$1" = "clean" ]; then
