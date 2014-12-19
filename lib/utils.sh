@@ -22,7 +22,7 @@ source "./lib/term.sh"
   }
 
   function timestamp() {
-    echo -e $(date +%s)
+    echo -e $(date +%s) 
   }
 #----------------------
 
@@ -120,7 +120,7 @@ source "./lib/term.sh"
 #----------------------
 
   function quicksleep(){
-    sleep 0.4
+    sleep 0.5
   }
 
   function started(){

@@ -8,9 +8,9 @@ set -o pipefail
 #----------------------
   
   SYSTEM_PROFILE="/etc/profile"
-  BASH_PROFILE="/$HOME/.bash_profile"
-  USER_PROFILE"/$HOME/.profile"
-  BASH_RC="/$HOME/.bashrc"
+  BASH_PROFILE="$HOME/.bash_profile"
+  USER_PROFILE="$HOME/.profile"
+  BASH_RC="$HOME/.bashrc"
 
   TEMP_DIR=''
   RECOVER=()
@@ -27,7 +27,7 @@ function bashful_welcome() {
 
 function bashful_config() {
   bashful_welcome "Bashful Install"
-  init_alias
+  #init_alias
   check_user_install
   check_startup_profile
 }
@@ -41,25 +41,28 @@ function bashful_install() {
 #-----------------------------------------------------------------
 
 function check_user_install() {
-  if [ -e $BASHFIN_SETUP_INCLUDE ]; then
-    info "Bashfin file already exists"
-    return 0
+  if [ -e $BASHFUL_HOME ]; then
+    info "Bashful install directory exists"
+    true
   else
-    #not installed
-    #warn "Bashfin not created"
-    build_user_install $BASHFUL_SETUP_INCLUDE
+    build_bin_install $BASHFUL_HOME
   fi
 }
 
+function build_bin_install() {
+    local BUILD_DIR=$1
+    started "Bashful install directory is missing"
+    mkdir -p "$BUILD_DIR"
+    if [ $? -eq 0 ]
+      then
+        updated "Bashful install directory created!"
+      else
+        problem "Cannot build bashful install directory"
+    fi 
 
-function check_startup_profile() {
-  if [ -e $SYSTEM_PROFILE ]; then 
-    info "system profile found" 
-  fi 
 }
 
-
-function build_user_install(){
+function build_user_install() {
 
   local BUILD_FILE=$1
   local TIMESTAMP=$(timestamp)
@@ -69,7 +72,7 @@ function build_user_install(){
   echo -e "# GENERATED BASHFIN INSTALL FILE - Last Built $(date)" >> $BUILD_FILE
   echo -e "export BASHFUL_INCLUDE_FILE=$BUILD_FILE" >> $BUILD_FILE
   echo -e "export BASHFUL_BUILD_TIME=$TIMESTAMP" >> $BUILD_FILE
-  echo -e "export BASHFUL_BIN=$BASHFUL_SETUP_ROOT_DIR/bin" >> $BUILD_FILE
+  echo -e "export BASHFUL_BIN=$BASHFUL_SETUP_DIR/bin" >> $BUILD_FILE
   echo -e "export BASHFUL_STATUS=INSTALL" >> $BUILD_FILE
   #mv -f $BUILD_FILE $BASHFIN_INCLUDE_INSTALL_DIR/$BUILD_FILE
 
@@ -77,7 +80,17 @@ function build_user_install(){
   updated "Build install file created!"
 }
 
+function check_startup_profile() {
+  if [ -e $SYSTEM_PROFILE ]; then 
+    info "System profile found" 
+    true
+  fi 
+}
 
+function backup_system_profile() {
+  echo hi
+
+}
 #-----------------------------------------------------------------
 
 
@@ -102,6 +115,8 @@ function check_build_dir() {
     fi
   fi
 }
+
+
 
 function check_named_install() {
   started "Verify insance installs"
@@ -158,6 +173,8 @@ function welcome_banner() {
   echo ${reset};
 }
 
+#-----------------------------------------------------------------
+
 function update_path() {
   started "Updating PATH"
   if ! inpath ${NEW_PATH}; then
@@ -210,8 +227,14 @@ function clean_up() {
 }
 
 function clean() {
-  remobj $BASHFIN_INCLUDE_FILE
+  remobj $BASHFUL_BIN
 }
+
+function throw_error() {
+  echo "$1" 1>&2
+  exit 1
+}
+
 
 function exit_error() {
  clean_up $1

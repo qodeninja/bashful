@@ -7,17 +7,17 @@
 
   case "$1" in
       welcome)
-        bashful_welcome
+        bashful_welcome "Bashful"
         ;;
-      config)
+      check)
         bashful_config
-        ;;
-      install)
-        echo 'lets install something yay'
-        echo $PWD
         ;;
       help)
         echo 'lets install something yay'
+        ;;
+      auto*|install*)
+        bashful_config
+        bashful_install
         ;;
       clean)
         echo 'lets install something yay'

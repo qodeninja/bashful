@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -o pipefail
+shopt -s expand_aliases
+
+export BASHFUL_SETUP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "./lib/setup-source.sh";
+
+if [ "$1" = "auto" ] || [ "$1" = "-a" ]; then
+  bashful install
+elif [ "$1" = "clean" ]; then
+  echo 'Clean what must be cleaned'
+else
+  if [ -t 1 ]; then 
+    echo '> Environment prepped for Bashful install'
+    echo '> use <bashful install>'
+  else
+    true
+  fi
+fi
+
