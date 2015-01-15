@@ -1,65 +1,65 @@
 #!/usr/bin/env bash
   
+  #-----------------------------------------------------------------
+  #
+  #
+  #
+  #
+  #
+  #-----------------------------------------------------------------
+
+  #----------------------
+    COLOR_NONE='\e[0m';
+    COLOR_GREEN='\e[1;32m';
+    COLOR_RED='\e[0;31m';
+    COLOR_BLUE='\e[0;34m';
+    COLOR_CYAN='\e[1;36m';
+    COLOR_GREY='\e[1;90m';
+    COLOR_WHITE='\e[0;37m';
+    PASS='\xE2\x9C\x93';
+    FAIL='\xE2\x9C\x97';
+  #----------------------
+
+
   #----------------------
     set -o pipefail
     shopt -s expand_aliases
-    OPT_AUTO=0
-    OPTIND=1
     CURR_DIR="$(pwd)"
-    OPT_BASH_SOURCED=0
   #----------------------
 
+
   #----------------------
+    #setup file must be sourced
     if [ "$0" = "-bash" ]; then
-      OPT_BASH_SOURCED=1
-      #echo "Bash Sourced"
-    fi
-  #----------------------
+      
+      #export paths and functions to setup BASHFUL
+      export BASHFUL_SETUP_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+      source "./inc/setup-exports.sh"
 
-
-  #----------------------
-    export PATH_BASHFUL_SETUP_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-    source "./inc/setup-exports.sh"
-    source "./inc/terminal-exports.sh"
-    setup_install_alias
-  #----------------------
-
-
-  #----------------------
-  # iterate over local arguments
-    while getopts "cd:a" option; do
-      case "$option" in
-        c)  #set cli mode
-            #echo -e "${orange}Cleaning previous cruft ${reset}"
-            OPT_CLEAN=1
-            ;;
-        a)  #set cli mode
-            #echo -e "${green}Enabling Auto Install ${reset}"
-            OPT_AUTO=1
-            ;;
-        :)  # usage help
-            echo -e "${red}[bashful] Error: missing argument"
-            exit 1
-            ;;
-        ?)  # usage help
-            echo  "${red}[bashful] Error: Unknown option $1 ${reset}"
-            exit 1
-            ;;
-      esac
-    done
-  #----------------------
-
-  #----------------------
-
-    if [ ${OPT_AUTO} -eq 1 ]; then
-      bashful install
-    else
+      #only echo instructions in terminal mode
       if [ -t 1 ]; then 
-        echo '> Environment prepped for Bashful install'
-        echo '> use <bashful install>'
+        printf "\n\n${COLOR_GREEN}${PASS} Environment configured for Bashful${COLOR_NONE}\n\n"
+
+        if [ -d $PATH_BASHFUL_ROOT ] && [ -f $PATH_BASHFUL_USER_INSTALL_FILE ]; then 
+          printf "> Bashful is currently installed\n"
+          printf "${COLOR_BLUE} bashful uninstall ${COLOR_NONE}\n"
+        else
+          printf "> Bashful is not currently installed\n"
+          printf "${COLOR_BLUE} bashful install ${COLOR_NONE}\n"
+        fi
+
+        printf "${COLOR_BLUE} bashful clean ${COLOR_NONE}\n"
+        printf "${COLOR_BLUE} bashful help ${COLOR_NONE}\n"
+
       else
         true
       fi
+
+    else
+      printf "\n\n${COLOR_RED}${FAIL} BASHFUL SETUP FAILED${COLOR_NONE}\n\n"
+      printf "> Bashful needs to setup environment variables before installing. \n"
+      printf "Usage: source ./setup\n\n"
+      false
     fi
   #----------------------
 

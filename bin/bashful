@@ -1,8 +1,82 @@
 #!/usr/bin/env bash
 
-  source "./lib/bashful-interface.sh";
+  #----------------------
+    set -o pipefail
+    shopt -s expand_aliases
+    trap exit_signal EXIT
+  #----------------------
 
-  trap exit_signal EXIT
+  #----------------------
+    OPTIND=1
+    OPT_AUTO=0
+    OPT_DEBUG=0
+    OPT_CLEAN=0
+    OPT_NUKE=0
+    OPT_FORCE=0
+    OPT_QUIET=0
+    OPT_BASH_SOURCED=0
+  #----------------------
+
+  #----------------------
+    CURR_DIR="$(pwd)"
+    source "./lib/bashful-interface.sh";
+  #----------------------
+
+  #----------------------
+  # iterate over local arguments
+    while getopts "cdan" option; do
+      case "$option" in
+        c)  #set cli mode
+            OPT_CLEAN=1
+            shift
+            ;;
+        a)  #set cli mode
+            OPT_AUTO=1
+            shift
+            ;;
+        n)  #set cli mode
+            OPT_NUKE=1
+            shift
+            ;;
+        d)  #set cli mode
+            OPT_DEBUG=1
+            shift
+            ;;
+        q)  #set cli mode
+            OPT_QUIET=1
+            shift
+            ;;
+        :)  # usage help
+            echo -e "${red}[bashful] Error: missing argument"
+            exit 1
+            ;;
+        ?)  # usage help
+            echo  "${red}[bashful] Error: Unknown option $1 ${reset}"
+            exit 1
+            ;;
+      esac
+    done
+  #----------------------
+
+  #----------------------
+    if [ $OPT_DEBUG -eq 1 ]; then
+      bashful_debug
+    fi
+
+    if [ $OPT_CLEAN -eq 1 ]; then
+      bashful_clean
+    fi
+
+    if [ $OPT_NUKE -eq 1 ]; then
+      bashful_nuke
+    fi
+
+    if [ $OPT_AUTO -eq 1 ]; then
+      bashful_install
+    fi
+  #----------------------
+  
+
 
   # if same_file ./setup /Users/qodeninja/setup-bash; then
   #   echo 'same file'
@@ -10,26 +84,34 @@
   #   echo 'dunno!'
   # fi
 
+  debug "BASHFUL ARGS => $@"
 
   case "$1" in
       welcome)
         bashful_welcome "Bashful"
         ;;
-      check)
-        bashful_config
+      test|debug)
+        bashful_debug
+        OPT_COMMAND="DEBUG"
         ;;
       help)
         echo 'lets install something yay'
         ;;
       auto*|install*)
-        bashful_config
+        bashful_install
+        OPT_COMMAND="INSTALL"
         #bashful_install
         ;;
-      clean)
-        echo 'lets install something yay'
+      clean*)
+        bashful_clean
+        OPT_COMMAND="CLEAN"
+        ;;
+      nuke)
+        bashful_nuke
+        OPT_COMMAND="NUKE"
         ;;
       *)
-    echo $"Usage: install | config"
+    echo -e "Usage: install | config $1"
     exit 1
   esac
   exit $?

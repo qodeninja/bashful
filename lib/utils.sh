@@ -55,6 +55,18 @@ source "./lib/term.sh"
     sed '/^#/ d' $1
   }
 
+  function gunset(){
+    local PATTERN=$1
+    #local var_re="${1:-.*}"
+    #eval $( set | awk -v FS="=" -v VAR="$var_re" '$1 ~ VAR { print "unset", $1 }' )
+    if [ -n $PATTERN ]; then
+      env | grep ${PATTERN} | while read -r line ; do
+        echo -e "\nGrep on $line"
+      done
+    fi
+  }
+
+
 #----------------------
 
 
@@ -221,11 +233,19 @@ source "./lib/term.sh"
     printf "\r${orange}${delta}${reset} ${white}${str}${reset}${clear_eol}\n" 
   }
 
+  function concern(){
+    quicksleep
+    str=$1
+    printf "\r${whitedim}${longbar}${reset} ${whitedim}${str}${reset}${clear_eol}\n" 
+  }
+
+
   function failed(){
     quicksleep
     str=$1
     printf "\r${red}${fail2}${reset} ${white}${str}${reset}${clear_eol}\n" 
   }
+
 
 #----------------------
 

@@ -9,6 +9,7 @@
   fail2='\xE2\x9C\x95';
   arrow='\xE2\x9E\x9C';
   delta='\xE2\x96\xB3';
+  longbar='\xE2\x80\x95';
 
   # if command_exists tput && [ ! -z $len ]; then
 
@@ -21,8 +22,8 @@
 
   purple=$(tput setaf 5)
   red=$(tput setaf 1)
-  yellow=$(tput setaf 11)
   green=$(tput setaf 2)
+  yellow=$(tput setaf 11)
   orange=$(tput setaf 3)
   blue=$(tput setaf 12)
   cyan=$(tput setaf 14)

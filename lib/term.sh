@@ -38,7 +38,7 @@ function pass() {
 
 function warn() { 
   console "${orange}${delta} %s${reset}\n" "$@"
-  return 1
+  return 0
 }
 
 function fail() { 
@@ -48,19 +48,19 @@ function fail() {
 
 function note() { 
   console "${blue}${arrow} ${underline}${bold}${blue}Note:${reset} ${blue}%s${reset}\n" "$@"
-  return 1
+  return 0
 }
 
 
 function wait() { 
   console "${grey}... %s${reset}\n" "$@"
-  return 1
+  return 0
 }
 
 
 function info() { 
   console "${blue}%s${reset}\n" "$@"
-  return 1
+  return 0
 }
 
 function red(){
