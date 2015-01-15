@@ -24,6 +24,10 @@ source "./lib/term.sh"
   function timestamp() {
     echo -e $(date +%s) 
   }
+
+  function filetime(){
+    echo -e $(date +%m%d_%I%m%S_%a)
+  }
 #----------------------
 
 
@@ -62,6 +66,44 @@ source "./lib/term.sh"
 
 #----------------------
 
+
+
+#----------------------
+  # function util_extract() {
+  #   if [ -f $1 ] ; then
+  #     case $1 in
+  #       *.tar.bz2)   tar xvjf $1    ;;
+  #       *.tar.gz)    tar xvzf $1    ;;
+  #       *.tgz)       tar xvzf $1    ;;
+  #       *.bz2)       bunzip2 $1     ;;
+  #       *.rar)       unrar x $1     ;;
+  #       *.gz)        gunzip $1      ;;
+  #       *.tar)       tar xvf $1     ;;
+  #       *.tbz2)      tar xvjf $1    ;;
+  #       *.tgz)       tar xvzf $1    ;;
+  #       *.zip)       unzip $1       ;;
+  #       *.Z)         uncompress $1  ;;
+  #       *.7z)        7z x $1        ;;
+  #       *)           echo "'$1' cannot be extracted via >extract<" ;;
+  #     esac
+  #   else
+  #     echo "'$1' is not a valid file"
+  #   fi
+  # }
+
+  function util_tarup() {
+    local FILE_ID=$1
+    shift
+    local FILE_LIST=("${@}")
+    local FILE_TIME="$(filetime)"
+    local TAR_FILE="${FILE_ID}${FILE_TIME}.tar"
+
+    #tar -cvf ${TAR_FILE} bashrc.d/
+  }
+
+#----------------------
+
+
 #----------------------
 
   function same_file() {
@@ -80,6 +122,19 @@ source "./lib/term.sh"
       false
     fi
 
+  }
+
+
+
+  function util_keygen() {
+    echo "What's the name of the Key (no spaced please) ? ";
+    read name;
+    echo "What's the email associated with it? ";
+    read email;
+    `ssh-keygen -t rsa -f ~/.ssh/id_rsa_$name -C "$email"`;
+    ssh-add ~/.ssh/id_rsa_$name
+    pbcopy < ~/.ssh/id_rsa_$name.pub;
+    echo "SSH Key copied in your clipboard";
   }
 
 #----------------------
@@ -110,7 +165,7 @@ source "./lib/term.sh"
 #----------------------
 
   function source_dep() {
-    local mod_name="${1}"
+    local mod_name="$1"
     shift
     local dep_list=("${@}")
     local mods_loaded=("${MOD_LOADED[@]}")
@@ -118,6 +173,8 @@ source "./lib/term.sh"
       echo $dep
     done
   }
+
+
 
 #----------------------
 
@@ -143,7 +200,7 @@ source "./lib/term.sh"
 #----------------------
 
   function quicksleep(){
-    sleep 0.5
+    sleep 0.2
   }
 
   function started(){
@@ -161,7 +218,7 @@ source "./lib/term.sh"
   function problem(){
     quicksleep
     str=$1
-    printf "\r${orange}${fail2}${reset} ${white}${str}${reset}${clear_eol}\n" 
+    printf "\r${orange}${delta}${reset} ${white}${str}${reset}${clear_eol}\n" 
   }
 
   function failed(){

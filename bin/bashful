@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-  source "./lib/interface.sh";
+  source "./lib/bashful-interface.sh";
 
   trap exit_signal EXIT
 
@@ -23,7 +23,7 @@
         ;;
       auto*|install*)
         bashful_config
-        bashful_install
+        #bashful_install
         ;;
       clean)
         echo 'lets install something yay'
