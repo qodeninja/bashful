@@ -21,7 +21,7 @@ set -o pipefail
 #-----------------------------------------------------------------
 function bashful_welcome() {
   welcome_banner "$1"
-  purple 'Configuring your environment for Bashful!'
+  purple "Configuring your environment for Bashful! \n"
   update_path
 }
 
@@ -36,7 +36,13 @@ function bashful_install() {
   echo 'hi'
 }
 
-
+function bashful_confirm_vars(){
+  grey 'confirm variables'
+  #echo $VERBOSE
+  cyan "home $BF_USER_HOME_DIR"
+  cyan "build $BF_BUILD_DIR"
+  cyan "profile $BF_PROFILE_NAME"
+}
 
 #-----------------------------------------------------------------
 

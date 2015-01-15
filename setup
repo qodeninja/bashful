@@ -1,22 +1,65 @@
 #!/usr/bin/env bash
+  
+  #----------------------
+    set -o pipefail
+    shopt -s expand_aliases
+    OPT_AUTO=0
+    OPTIND=1
+    CURR_DIR=$(pwd)
+    OPT_BASH_SOURCED=0
+  #----------------------
 
-set -o pipefail
-shopt -s expand_aliases
+  #----------------------
+    if [ "$0" = "-bash" ]; then
+      OPT_BASH_SOURCED=1
+      echo "Bash Sourced"
+    fi
+  #----------------------
 
-export BASHFUL_SETUP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source "./lib/setup-source.sh";
+
+  #----------------------
+    export BASHFUL_SETUP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    source "./inc/setup-exports.sh"
+    source "./inc/terminal-exports.sh"
+    setup_install_alias
+  #----------------------
 
 
-if [ "$1" = "auto" ] || [ "$1" = "-a" ]; then
-  bashful install
-elif [ "$1" = "clean" ]; then
-  echo 'Clean what must be cleaned'
-else
-  if [ -t 1 ]; then 
-    echo '> Environment prepped for Bashful install'
-    echo '> use <bashful install>'
-  else
-    true
-  fi
-fi
+  #----------------------
+    while getopts "cd:a" option; do
+      case "$option" in
+        c)  #set cli mode
+            echo -e "${orange}Cleaning previous cruft ${reset}"
+            OPT_CLEAN=1
+            ;;
+        a)  #set cli mode
+            echo -e "${green}Enabling Auto Install ${reset}"
+            OPT_AUTO=1
+            ;;
+        :)  # usage help
+            echo -e "${red}[bashful] Error: missing argument"
+            exit 1
+            ;;
+        ?)  # usage help
+            echo  "${red}[bashful] Error: Unknown option $1 ${reset}"
+            exit 1
+            ;;
+      esac
+    done
+  #----------------------
+
+  #----------------------
+  echo $OPT_AUTO
+    if [ $OPT_AUTO -eq 1 ]; then
+      echo "Are you ready to run?"
+      bashful install
+    else
+      if [ -t 1 ]; then 
+        echo '> Environment prepped for Bashful install'
+        echo '> use <bashful install>'
+      else
+        true
+      fi
+    fi
+  #----------------------
 
