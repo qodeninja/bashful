@@ -106,20 +106,19 @@
         bashful_welcome "Bashful"
         ;;
       test)
-        bashful_test
         OPT_COMMAND="TEST"
+        bashful_test
         ;;
       help)
         echo 'lets install something yay'
         ;;
       auto*|install*)
-        bashful_install
         OPT_COMMAND="INSTALL"
-        #bashful_install
+        bashful_install
         ;;
       clean*)
-        bashful_clean
         OPT_COMMAND="CLEAN"
+        bashful_clean
         ;;
       nuke)
         bashful_nuke
