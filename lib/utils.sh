@@ -29,7 +29,7 @@
     }
 
     function filetime(){
-      echo -e $(date +%m%d_%I%m%S_%a)
+      echo -e $(date +%m%d%Y)
     }
   #----------------------
 
@@ -103,15 +103,25 @@
 
 
   #----------------------
-
+    #macos -H option?
     function util_tarup() {
       local FILE_ID=$1
       shift
+      local COUNT=0
       local FILE_LIST=("${@}")
       local FILE_TIME="$(filetime)"
-      local TAR_FILE="${FILE_ID}${FILE_TIME}.tar"
+      local TEMP_TAR_FILE="temp.tar"
+            TAR_FILE="${FILE_ID}-${FILE_TIME}"
 
-      #tar -cvf ${TAR_FILE} bashrc.d/
+      #increment file
+      while [ -f "${TAR_FILE}.tar" ] || [ -f "${TAR_FILE}-${COUNT}.tar" ];do
+        COUNT=$[COUNT + 1]
+        TAR_FILE="${TAR_FILE}-${COUNT}"
+      done
+      TAR_FILE="${TAR_FILE}.tar"
+
+      local TAR_CMD="tar -Hcf ${TEMP_TAR_FILE} ${FILE_LIST[@]}" #store symlink deref
+      ${TAR_CMD} 2>&1 | grep -v "Removing leading"
     }
 
     function same_file() {

@@ -45,7 +45,7 @@
 
     function bashful_usage() {
 			cat <<-EOF
-				Usage: bashful [-cdnt] [command]
+				Usage: bashful [-cdnt] <command> [subcommand]
 			EOF
     }
   #-----------------------------------------------------------------
@@ -181,19 +181,23 @@
     }
 
 
-
     function backup_user_profile() {
       local FILES=("${USER_PROFILE_FILES[@]}")
       started "Backing up user files"
       for i in ${!FILES[@]}; do
         file="$HOME/${FILES[$i]}"
         if [ ! -f "$file" ]; then
-          debug "$file doesnt exist"
+          #debug "$file doesnt exist"
           unset FILES[$i]
+        else
+          FILES[$i]=$file
         fi
       done
-      debug '%s exists\n' "${FILES[@]}"
-      updated "Back up user files done."
+      #debug '%s exists\n' "${FILES[@]}"
+
+      util_tarup "profile-original" "${FILES[@]}"
+
+      updated "Back up user files done. $TAR_FILE"
     }
   #-----------------------------------------------------------------
   
