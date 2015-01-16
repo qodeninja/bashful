@@ -12,7 +12,7 @@ set -o pipefail
 
     function debug(){
       if [ -t 1 ] && [ $OPT_DEBUG -eq 1 ]; then 
-        printf "${1}" "${2}"
+        printf "${1}\n" "${2}"
       fi
     }
   #----------------------

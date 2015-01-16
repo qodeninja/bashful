@@ -8,11 +8,10 @@
 
 
   #----------------------
+    USER_PROFILE_FILES=(.profile .bash_profile .bash_login .bashrc .bash_alias .alias .dircolors .bash_completion)
     PATH_SYSTEM_PROFILE="/etc/profile"
     PATH_BASH_PROFILE="$HOME/.bash_profile"
-    PATH_USER_PROFILE="$HOME/.profile"
     PATH_BASH_RC="$HOME/.bashrc"
-
     TEMP_DIR=''
   #----------------------
 
@@ -21,8 +20,6 @@
   #-----------------------------------------------------------------
     function bashful_welcome() {
       welcome_banner "$1"
-      purple "Configuring your environment for Bashful! \n"
-      update_path $BASHFUL_SETUP_BIN
     }
 
     function bashful_config() {
@@ -32,7 +29,9 @@
 
     function bashful_install() {
       bashful_welcome "Bashful Install"
-      check_install_state
+      update_path $BASHFUL_SETUP_BIN
+      #check_install_state
+      backup_user_profile 
       #check_startup_profile
     }
 
@@ -50,6 +49,7 @@
 			EOF
     }
   #-----------------------------------------------------------------
+
 
   #-----------------------------------------------------------------
     function bashful_test() {
@@ -183,7 +183,17 @@
 
 
     function backup_user_profile() {
-      echo 'backing up'
+      local FILES=("${USER_PROFILE_FILES[@]}")
+      started "Backing up user files"
+      for i in ${!FILES[@]}; do
+        file="$HOME/${FILES[$i]}"
+        if [ ! -f "$file" ]; then
+          debug "$file doesnt exist"
+          unset FILES[$i]
+        fi
+      done
+      debug '%s exists\n' "${FILES[@]}"
+      updated "Back up user files done."
     }
   #-----------------------------------------------------------------
   
