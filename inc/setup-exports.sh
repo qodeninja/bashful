@@ -19,10 +19,12 @@
 
 #----------------------
   function bashful_cmd(){
+
     local CMD="$1"
     local BASHFUL="${BASHFUL_SETUP_BIN}/bashful"
     shift
     $BASHFUL $CMD "$@"
+
   }
 
   alias bashful="bashful_cmd"

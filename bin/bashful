@@ -6,6 +6,7 @@
     trap exit_signal EXIT
   #----------------------
 
+
   #----------------------
     OPTIND=1
     OPT_AUTO=0
@@ -14,44 +15,56 @@
     OPT_NUKE=0
     OPT_FORCE=0
     OPT_QUIET=0
+    OPT_TEST=0
     OPT_BASH_SOURCED=0
+    SHIFT_OPS=0
   #----------------------
+
 
   #----------------------
     CURR_DIR="$(pwd)"
     source "./lib/bashful-interface.sh";
   #----------------------
 
+
+  #----------------------
+  #last argument check
+  if [[ "${@: -1}" =~ "-" ]]; then
+    throw_error "Invalid argument, missing bashful command"
+  fi
+  #----------------------
+
+
   #----------------------
   # iterate over local arguments
-    while getopts "cdan" option; do
+    while getopts "cdants" option; do
       case "$option" in
-        c)  #set cli mode
+        c)  #clean
             OPT_CLEAN=1
-            shift
+            SHIFT_OPS=1
             ;;
-        a)  #set cli mode
+        a)  #auto
             OPT_AUTO=1
-            shift
+            SHIFT_OPS=1
             ;;
-        n)  #set cli mode
+        n)  #nuke
             OPT_NUKE=1
-            shift
+            SHIFT_OPS=1
             ;;
-        d)  #set cli mode
+        d)  #debug
             OPT_DEBUG=1
-            shift
+            SHIFT_OPS=1
             ;;
-        q)  #set cli mode
+        t)  #test
+            OPT_TEST=1
+            SHIFT_OPS=1
+            ;;
+        q)  #quiet
             OPT_QUIET=1
-            shift
+            SHIFT_OPS=1
             ;;
         :)  # usage help
             echo -e "${red}[bashful] Error: missing argument"
-            exit 1
-            ;;
-        ?)  # usage help
-            echo  "${red}[bashful] Error: Unknown option $1 ${reset}"
             exit 1
             ;;
       esac
@@ -59,8 +72,21 @@
   #----------------------
 
   #----------------------
-    if [ $OPT_DEBUG -eq 1 ]; then
-      bashful_debug
+  # remove any -option from args
+  for item in "$@" ; do
+    if [[ "$item" =~ "-" ]]; then
+      debug "shifting $item\n"
+      shift
+    fi
+  done
+  #debug "BASHFUL ARGS => 0$0 1$1 2$2"
+  #printf '%s\n' "${@}"
+  #----------------------
+
+
+  #----------------------
+    if [ $OPT_TEST -eq 1 ] ; then
+      bashful_test
     fi
 
     if [ $OPT_CLEAN -eq 1 ]; then
@@ -70,29 +96,18 @@
     if [ $OPT_NUKE -eq 1 ]; then
       bashful_nuke
     fi
-
-    if [ $OPT_AUTO -eq 1 ]; then
-      bashful_install
-    fi
   #----------------------
   
 
-
-  # if same_file ./setup /Users/qodeninja/setup-bash; then
-  #   echo 'same file'
-  # else
-  #   echo 'dunno!'
-  # fi
-
-  debug "BASHFUL ARGS => $@"
-
+  
+  #----------------------
   case "$1" in
       welcome)
         bashful_welcome "Bashful"
         ;;
-      test|debug)
-        bashful_debug
-        OPT_COMMAND="DEBUG"
+      test)
+        bashful_test
+        OPT_COMMAND="TEST"
         ;;
       help)
         echo 'lets install something yay'
@@ -111,8 +126,10 @@
         OPT_COMMAND="NUKE"
         ;;
       *)
-    echo -e "Usage: install | config $1"
-    exit 1
+        echo -e "Usage: install | config ($1)"
+        exit 1
   esac
+  #----------------------
+  
   exit $?
 

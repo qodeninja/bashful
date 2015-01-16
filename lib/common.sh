@@ -20,7 +20,7 @@ set -o pipefail
 
   #----------------------
     function log()   { printf '%s\n' "$*"; }
-    function error()   { log "ERROR: $*" >&2; } #google recommended
+    function error() { log "ERROR: $*" >&2; } #google recommended
     function fatal() { error "$@"; exit 1; }
   #----------------------
 

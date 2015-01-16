@@ -51,10 +51,14 @@
       warn "Bashful Nuke is not implemented yet"
     }
 
-
+    function bashful_usage() {
+			cat <<-EOF
+				Usage: bashful [-cdnt] [command]
+			EOF
+    }
   #-----------------------------------------------------------------
 
-    function bashful_debug() {
+    function bashful_test() {
 
       #SETUP
       if [ -n "$BASHFUL_SETUP_BIN" ]; then
@@ -62,40 +66,50 @@
       else
         failed "Setup variable is missing"
       fi
+
       #SETUP CWD
       if ! inpath "$BASHFUL_SETUP_BIN"; then
         updated "PATH variable ready"
       else 
         failed "PATH missing setup bin path"
       fi
+
       #BASHFUL INSTALLED
       if [ -e "$PATH_BASHFUL_ROOT" ]; then
-        updated "Bashful root created"
+        updated "Bashful root ready"
       else
         concern "Bashful root not found"
       fi
+
       #BASHFUL SETUPFILE
       if [ -e "$PATH_BASHFUL_USER_SETUP_FILE" ]; then
-        updated "Bashful setup file found"
+        updated "Bashful setup file ready"
       else
         concern "Bashful setup file not created"
       fi
-      #OPTION AUTOMATE
-      if [ "$OPT_AUTO" = 1 ]; then 
-        updated "User Automate Option"
+
+      if [ "$OPT_DEBUG" = 1 ]; then 
+        updated "Debug On"
       else
-        concern "No Auto Option"
+        concern "Debug Off"
       fi
-      #OPTION CLEAN
+
+      if [ "$OPT_AUTO" = 1 ]; then 
+        updated "Automate On"
+      else
+        concern "Auto Off"
+      fi
+
       if [ "$OPT_CLEAN" = 1 ]; then 
-        updated "User Clean Option"
+        updated "Clean On"
       else
-        concern "No Clean Option"
+        concern "Clean Off"
       fi 
+
       if [ "$OPT_NUKE" = 1 ]; then 
-        updated "User Nuke Option"
+        updated "Nuke On"
       else
-        concern "No Nuke Option"
+        concern "Nuke Off"
       fi 
 
     }
@@ -265,7 +279,6 @@
         recover "Cleanup rolled back previously installed files"
         recover "Correct any errors and try again $1"
       fi
-      clean_vars
       updated "Done cleaning up!"
     }
 
@@ -294,16 +307,17 @@
 
 
     function throw_error() {
-      echo "$1" 1>&2
+      ERORR_MESSAGE=$1
+      #error "$1" 1>&2
       exit 1
     }
 
 
     function exit_error() {
-     clean_up $1
-     echo -e  "\n\n"
-     fail "An error occurred which prevented the install from running. $1"
+     #clean_up $1
+     error "$ERORR_MESSAGE" #TODO:fix to use stderr
      recover
+     bashful_usage
      return $1
     }
   #-----------------------------------------------------------------
