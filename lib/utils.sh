@@ -42,13 +42,7 @@
       esac
     }
 
-   alias path='echo -e ${PATH//:/\\n}'
-    # function inpath() {
-    #   for d; do
-
-    #   done
-    # }
-    
+    alias path='echo -e ${PATH//:/\\n}'
 
     function update_path() {
       local NEW_PATH=$1
@@ -103,33 +97,42 @@
 
 
   #----------------------
+
+    function safename(){
+      local name=$1
+      local ext=${2-""}
+      local count=0
+      #filetime external function
+      local currdate="$(filetime)"
+      local temp="${name}-${currdate}"
+      #extension is optional but if provied adds dot
+      if [ -n "${ext}" ]; then ext=".${ext}"; fi
+      local base="${temp}"
+      #increment file
+      while [ -f "${temp}${ext}" ] || [ -f "${base}-${count}${ext}" ]; do
+        count=$[count + 1]
+        temp="${base}-${count}"
+      done
+      temp="${temp}${ext}"
+      printf "${temp}"
+    }
+
+
     #macos -H option?
     function util_tarup() {
-      local FILE_ID=$1
-      shift
-      local COUNT=0
-      local FILE_LIST=("${@}")
-      local FILE_TIME="$(filetime)"
-      local TEMP_TAR_FILE="temp.tar"
-            TAR_FILE="${FILE_ID}-${FILE_TIME}"
-
-      #increment file
-      while [ -f "${TAR_FILE}.tar" ] || [ -f "${TAR_FILE}-${COUNT}.tar" ];do
-        COUNT=$[COUNT + 1]
-        TAR_FILE="${TAR_FILE}-${COUNT}"
-      done
-      TAR_FILE="${TAR_FILE}.tar"
-
-      local TAR_CMD="tar -Hcf ${TEMP_TAR_FILE} ${FILE_LIST[@]}" #store symlink deref
-      ${TAR_CMD} 2>&1 | grep -v "Removing leading"
+      local name=$1; shift
+      local list=("${@}")
+      local tarfile="$(safename ${name} tar)"
+      local tarcmd="tar -Hcf ${tarfile} ${list[@]}" #store symlink deref
+      ${tarcmd} 2>&1 | grep -v "Removing leading"
+      #retun value
+      TAR_FILE=${tarfile}
     }
 
     function same_file() {
-
       if [ -e $1 ] && [ -e $2 ]; then
         #md5 -q on mac
-        hash1=$(md5 -q ${1})
-        hash2=$(md5 -q ${2})
+        hash1=$(md5 -q ${1}); hash2=$(md5 -q ${2})
         if [ "${hash1}" = "${hash2}" ]; then
           true
         else
@@ -139,7 +142,6 @@
       else
         false
       fi
-
     }
 
     function source_dep() {
@@ -259,34 +261,29 @@
 
 
   #----------------------
-    function spinner() {
-      PROC=$1
-      while [ -d /proc/$PROC ];do
-        echo -n '/^H' ; sleep 0.05
-        echo -n '-^H' ; sleep 0.05
-        echo -n '\^H' ; sleep 0.05
-        echo -n '|^H' ; sleep 0.05
-      done
-      return 0
+
+    function spinner() { 
+      local pid=$1 
+      local delay=0.25 
+      while [ $(ps -eo pid | grep $pid) ]; do 
+        for i in \| / - \\; do 
+          printf ' [%c]\b\b\b\b' $i 
+          sleep $delay 
+        done 
+      done 
+      printf '\b\b\b\b'
     }
 
-    function spinner2(){
-        SP_STRING=${2:-"'|/=\'"}
-        while [ -d /proc/$1 ]
-        do
-            printf "$SP_COLOUR\e7  %${SP_WIDTH}s  \e8\e[0m $SP_STRING"
-            sleep ${SP_DELAY:-.2}
-            #SP_STRING=${SP_STRING#"${SP_STRING%?}"}${SP_STRING%?}
-        done
-
-        ## Adjust to taste (or leave empty)
-        # SP_COLOUR="\e[37;41m"
-        # SP_WIDTH=1.1  ## Try: SP_WIDTH=5.5
-        # SP_DELAY=.2
-
-        # sleep 3 &
-        # spinner "$!" '.o0Oo'
+    function download(){
+        local url=$1
+        echo -n "    "
+        wget --progress=dot $url 2>&1 | grep --line-buffered "%" | \
+            sed -u -e "s,\.,,g" | awk '{printf("\b\b\b\b%4s", $2)}'
+        echo -ne "\b\b\b\b"
+        echo " DONE"
     }
+
+
   #----------------------
 
 

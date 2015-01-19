@@ -16,6 +16,8 @@
     OPT_FORCE=0
     OPT_QUIET=0
     OPT_TEST=0
+    OPT_PROMPT=0
+    OPT_FORCE=0
     OPT_BASH_SOURCED=0
     SHIFT_OPS=0
   #----------------------
@@ -37,31 +39,28 @@
 
   #----------------------
   # iterate over local arguments
-    while getopts "cdants" option; do
+    while getopts "cdantif" option; do
       case "$option" in
         c)  #clean
             OPT_CLEAN=1
-            SHIFT_OPS=1
             ;;
-        a)  #auto
-            OPT_AUTO=1
-            SHIFT_OPS=1
+        i)  #auto
+            OPT_PROMPT=1
             ;;
         n)  #nuke
             OPT_NUKE=1
-            SHIFT_OPS=1
+            ;;
+        f)  #force
+            OPT_FORCE=1
             ;;
         d)  #debug
             OPT_DEBUG=1
-            SHIFT_OPS=1
             ;;
         t)  #test
             OPT_TEST=1
-            SHIFT_OPS=1
             ;;
         q)  #quiet
             OPT_QUIET=1
-            SHIFT_OPS=1
             ;;
         :)  # usage help
             echo -e "${red}[bashful] Error: missing argument"

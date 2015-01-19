@@ -12,7 +12,9 @@
     PATH_SYSTEM_PROFILE="/etc/profile"
     PATH_BASH_PROFILE="$HOME/.bash_profile"
     PATH_BASH_RC="$HOME/.bashrc"
-    TEMP_DIR=''
+    TEMP_DIR='/tmp/'
+
+
   #----------------------
 
 
@@ -20,18 +22,17 @@
   #-----------------------------------------------------------------
     function bashful_welcome() {
       welcome_banner "$1"
+      #(sleep 60) &
+      #spinner $!
     }
 
-    function bashful_config() {
-
-      check_startup_profile
-    }
 
     function bashful_install() {
       bashful_welcome "Bashful Install"
       update_path $BASHFUL_SETUP_BIN
-      #check_install_state
+
       backup_user_profile 
+      check_install_state
       #check_startup_profile
     }
 
@@ -123,7 +124,8 @@
         if [ ! -f $PATH_BASHFUL_USER_SETUP_FILE ]; then
           #new install
           failed "Bashful not installed."
-          fake_install_bashful
+          ##fake_install_bashful
+          build_bin_install
         else
           #unfinished install
           problem "Bashful has not finished installing."
@@ -195,9 +197,11 @@
       done
       #debug '%s exists\n' "${FILES[@]}"
 
-      util_tarup "profile-original" "${FILES[@]}"
+      util_tarup "profile" "${FILES[@]}"
 
-      updated "Back up user files done. $TAR_FILE"
+      #created tar is $TAR_FILE
+
+      updated "Back up user files done => ${white}${TAR_FILE}${reset}"
     }
   #-----------------------------------------------------------------
   
