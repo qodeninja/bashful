@@ -17,6 +17,8 @@
     OPT_QUIET=0
     OPT_TEST=0
     OPT_PROMPT=0
+    OPT_PROFILE=0
+    OPT_LOGFILE=0
     OPT_FORCE=0
     OPT_BASH_SOURCED=0
     SHIFT_OPS=0
@@ -39,7 +41,7 @@
 
   #----------------------
   # iterate over local arguments
-    while getopts "cdantif" option; do
+    while getopts "cdantiflp:" option; do
       case "$option" in
         c)  #clean
             OPT_CLEAN=1
@@ -56,8 +58,16 @@
         d)  #debug
             OPT_DEBUG=1
             ;;
+        p)  #profile
+            OPT_PROFILE=1
+            OPT_PROFILE_NAME=${OPTARG#"="}
+            echo -e "profile name ${OPT_PROFILE_NAME}"
+            ;;
         t)  #test
             OPT_TEST=1
+            ;;
+        l)  #logfile
+            OPT_LOGFILE=1
             ;;
         q)  #quiet
             OPT_QUIET=1
@@ -94,6 +104,11 @@
 
     if [ $OPT_NUKE -eq 1 ]; then
       bashful_nuke
+    fi
+
+    if [ $OPT_LOGFILE -eq 1 ]; then 
+      OPT_LOGFILENAME="${PATH_BASHFUL_LOG}"
+      touch $OPT_LOGFILENAME
     fi
   #----------------------
   

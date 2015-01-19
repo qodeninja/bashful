@@ -30,10 +30,8 @@
     function bashful_install() {
       bashful_welcome "Bashful Install"
       update_path $BASHFUL_SETUP_BIN
-
-      backup_user_profile 
+      backup_sys_profile 
       check_install_state
-      #check_startup_profile
     }
 
     function bashful_clean() {
@@ -116,19 +114,27 @@
     function check_install_state() {
       #check if ~/.bashful exists
       started "Checking Bashful install state"
-      if [ -e $PATH_BASHFUL_ROOT ] && [ ! -f $PATH_BASHFUL_USER_SETUP_FILE ]; then
+      if [ -e $PATH_BASHFUL_ROOT ] && [ -f $PATH_BASHFUL_USER_INSTALL_FILE ] && [ ! -f $PATH_BASHFUL_USER_INCOMPLETE_FILE ]; then
         #install is done
         updated "Bashful is fully installed."
+        fake_uninstall_bashful
       else
         #not installed yet
-        if [ ! -f $PATH_BASHFUL_USER_SETUP_FILE ]; then
+        if [ ! -f $PATH_BASHFUL_USER_INSTALL_FILE ]; then
           #new install
           failed "Bashful not installed."
-          ##fake_install_bashful
-          build_bin_install
+          build_dir "${PATH_BASHFUL_ROOT}"
+          build_dir "${PATH_BASHFUL_BIN}"
+          build_dir "${PATH_BASHFUL_PROFILES}"
+          build_dir "${PATH_BASHFUL_BACKUP}"
+          build_bashful_profile
+          fake_install_bashful
         else
-          #unfinished install
-          problem "Bashful has not finished installing."
+          if [ -f $PATH_BASHFUL_USER_INCOMPLETE_FILE ]; then
+            #unfinished install
+            problem "Bashful has not finished installing."
+          fi
+          fake_uninstall_bashful
         fi
       fi
     }
@@ -160,46 +166,73 @@
     function fake_install_bashful(){
       info "Fake installing bashful"
       mkdir -p $PATH_BASHFUL_ROOT
-      touch $PATH_BASHFUL_USER_SETUP_FILE
+      touch $PATH_BASHFUL_USER_INSTALL_FILE
     }
 
     function fake_uninstall_bashful(){
       remobj $PATH_BASHFUL_ROOT
-      remobj $PATH_BASHFUL_USER_SETUP_FILE
+      remobj $PATH_BASHFUL_USER_INSTALL_FILE
+      remobj $PATH_BASHFUL_PROFILES
     }
   #-----------------------------------------------------------------
 
   #-----------------------------------------------------------------
-    function build_bin_install() {
+    function build_dir() {
         local BUILD_DIR=$1
-        started "Bashful install directory is missing"
+        started "Bashful looking for ${BUILD_DIR}"
         mkdir -p "$BUILD_DIR"
         if [ $? -eq 0 ]
           then
-            updated "Bashful install directory created!"
+            updated "Created directory ${white}${BUILD_DIR}${reset}"
           else
-            problem "Cannot build bashful install directory"
+            problem "Cannot build bashful ${BUILD_DIR} directory"
         fi 
     }
 
+    function build_bashful_profile(){
+      local PROFILE_NAME=${OPT_PROFILE_NAME:default}
+            PATH_PROFILE="${PATH_BASHFUL_PROFILES}/${PROFILE_NAME}"
 
-    function backup_user_profile() {
+      started "Bashful creating profile ${PROFILE_NAME}"
+      
+      if [ -d "${PATH_BASHFUL_PROFILES}" ] && [ ! -d $PATH_PROFILE ]; then
+        mkdir -p "${PATH_PROFILE}"
+        touch "${PATH_PROFILE}/.path"
+        touch "${PATH_PROFILE}/.alias"
+        touch "${PATH_PROFILE}/.env"
+        touch "${PATH_PROFILE}/.cache"
+        touch "${PATH_PROFILE}/.project"
+        touch "${PATH_PROFILE}/.version"
+        updated "Bashful Profile (${cyan}${PROFILE_NAME}${reset}) profile started!"
+      else
+        warn "Careful ${PROFILE_NAME} profile already exists"
+      fi
+    }
+
+
+    function backup_sys_profile() {
       local FILES=("${USER_PROFILE_FILES[@]}")
       started "Backing up user files"
+
+      #keep only existing files
       for i in ${!FILES[@]}; do
         file="$HOME/${FILES[$i]}"
         if [ ! -f "$file" ]; then
-          #debug "$file doesnt exist"
           unset FILES[$i]
         else
           FILES[$i]=$file
         fi
       done
-      #debug '%s exists\n' "${FILES[@]}"
 
-      util_tarup "profile" "${FILES[@]}"
-
-      #created tar is $TAR_FILE
+      BAK_PROFILE_ORIGINAL="${PATH_BASHFUL_BACKUP}/profile-original.tar"
+      echo -e "backup file is $BAK_PROFILE_ORIGINAL"
+      if [ ! -f "${BAK_PROFILE_ORIGINAL}" ] && [ ! -f "./profile-original.tar" ]; then
+        warn "profile original not found at ${BAK_PROFILE_ORIGINAL}"
+        util_tarup "profile-original" "${FILES[@]}"
+      else
+        info "making copy of profile"
+        util_tarup "profile-$(filetime)" "${FILES[@]}"
+      fi
 
       updated "Back up user files done => ${white}${TAR_FILE}${reset}"
     }

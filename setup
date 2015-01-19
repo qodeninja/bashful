@@ -40,7 +40,7 @@
       if [ -t 1 ]; then 
         printf "\n\n${COLOR_GREEN}${PASS} Environment configured for Bashful${COLOR_NONE}\n\n"
 
-        if [ -d $PATH_BASHFUL_ROOT ] && [ -f $PATH_BASHFUL_USER_INSTALL_FILE ]; then 
+        if [ -d $PATH_BASHFUL_ROOT ] && [ -f $PATH_BASHFUL_USER_INSTALL_FILE ] && [ ! -f $PATH_BASHFUL_USER_INCOMPLETE_FILE ]; then 
           printf "> Bashful is currently installed\n"
           printf "${COLOR_BLUE} bashful uninstall ${COLOR_NONE}\n"
         else

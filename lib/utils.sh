@@ -13,6 +13,30 @@
 
 
   #----------------------
+    function add_entry(){
+      local etype=$1 #alias,path,env
+      local ename=$2
+      local ebody=$3
+      local egroup=$4
+    }
+
+    function edit_entry(){
+      local etype=$1 #alias,path,env
+      local ename=$2
+      local ebody=$3
+      local egroup=$4
+    }
+
+    function del_entry(){
+      local etype=$1 #alias,path,env
+      local ename=$2
+      local ebody=$3
+      local egroup=$4
+    }
+  #----------------------
+
+
+  #----------------------
     function add_path() {
       for d; do
         d=$(cd -- "$d" && { pwd -P || pwd; }) 2>/dev/null  # canonicalize symbolic links
@@ -101,12 +125,12 @@
     function safename(){
       local name=$1
       local ext=${2-""}
+      local cache=${3-""}
       local count=0
-      #filetime external function
-      local currdate="$(filetime)"
-      local temp="${name}-${currdate}"
       #extension is optional but if provied adds dot
-      if [ -n "${ext}" ]; then ext=".${ext}"; fi
+      if [ -n "${cache}" ]; then ext="-${cache}"; fi
+      if [ -n "${ext}"   ]; then ext=".${ext}"; fi
+      local temp="${name}${cache}"
       local base="${temp}"
       #increment file
       while [ -f "${temp}${ext}" ] || [ -f "${base}-${count}${ext}" ]; do
