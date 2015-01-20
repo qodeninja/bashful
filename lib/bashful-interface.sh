@@ -127,8 +127,21 @@
           build_dir "${PATH_BASHFUL_BIN}"
           build_dir "${PATH_BASHFUL_PROFILES}"
           build_dir "${PATH_BASHFUL_BACKUP}"
-          build_bashful_profile
+
+          if [ $OPT_PROFILE -eq 1 ]; then
+            #build_bashful_profile
+            
+            start_spinner "Making Profilies"
+              sleep 10
+              build_bashful_profile
+            stop_spinner $?
+
+          else
+            concern "Bash starter profile not created"
+          fi
+
           fake_install_bashful
+
         else
           if [ -f $PATH_BASHFUL_USER_INCOMPLETE_FILE ]; then
             #unfinished install
@@ -146,6 +159,8 @@
         true
       fi 
     }
+
+
 
   #-----------------------------------------------------------------
 
@@ -194,15 +209,10 @@
             PATH_PROFILE="${PATH_BASHFUL_PROFILES}/${PROFILE_NAME}"
 
       started "Bashful creating profile ${PROFILE_NAME}"
-      
-      if [ -d "${PATH_BASHFUL_PROFILES}" ] && [ ! -d $PATH_PROFILE ]; then
-        mkdir -p "${PATH_PROFILE}"
-        touch "${PATH_PROFILE}/.path"
-        touch "${PATH_PROFILE}/.alias"
-        touch "${PATH_PROFILE}/.env"
-        touch "${PATH_PROFILE}/.cache"
-        touch "${PATH_PROFILE}/.project"
-        touch "${PATH_PROFILE}/.version"
+
+
+      if [ ! -d $PATH_PROFILE ]; then
+        touch_dir_files "${PATH_PROFILE}" .path .alias .env .cache .project .version
         updated "Bashful Profile (${cyan}${PROFILE_NAME}${reset}) profile started!"
       else
         warn "Careful ${PROFILE_NAME} profile already exists"
@@ -226,6 +236,7 @@
 
       BAK_PROFILE_ORIGINAL="${PATH_BASHFUL_BACKUP}/profile-original.tar"
       echo -e "backup file is $BAK_PROFILE_ORIGINAL"
+
       if [ ! -f "${BAK_PROFILE_ORIGINAL}" ] && [ ! -f "./profile-original.tar" ]; then
         warn "profile original not found at ${BAK_PROFILE_ORIGINAL}"
         util_tarup "profile-original" "${FILES[@]}"

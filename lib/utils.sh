@@ -119,6 +119,42 @@
   #----------------------
 
 
+  #----------------------
+  #install 
+  function touch_dir_files(){
+    local base=$1; shift
+    local files=("${@}")
+    if [ ! -d "${base}" ]; then
+      make_dir "$base"
+    fi
+    if [ $? -eq 0 ]; then
+      for f in "${files[@]}"; do
+        local fullpath="${base}/${f}"
+        #started "Looking for ${fullpath}"
+        if [ ! -f "${fullpath}" ]; then
+          touch "${fullpath}"
+        fi
+      done
+    fi
+  }
+
+
+
+  function make_dir() {
+      local BUILD_DIR=$1
+      started "Looking for ${BUILD_DIR}"
+      mkdir -p "$BUILD_DIR"
+      if [ $? -eq 0 ]
+        then
+          updated "Created directory ${white}${BUILD_DIR}${reset}"
+          true
+        else
+          problem "Cannot build ${BUILD_DIR} directory"
+          false
+      fi 
+  }
+
+  #----------------------
 
   #----------------------
 
@@ -285,13 +321,75 @@
 
 
   #----------------------
+    SPINNER_STAT=""
+    function _spinner() {
+        # $1 start/stop
+        #
+        # on start: $2 display message
+        # on stop : $2 process exit status
+        #           $3 spinner function pid (supplied from stop_spinner)        
+        case $1 in
+            start)
+              i=1
+              sp='\|/-'
+              delay=0.15
+              # calculate the column where spinner and status msg will be displayed
+              #let column=$(tput cols)-${#2}-8
+              let column=4
+
+              # display message and position the cursor in $column column
+              started "${SPINNER_STAT}"
+              printf "%${column}s"
+              # start spinner
+              while :
+              do
+                printf "\b${sp:i++%${#sp}:1}"
+                sleep $delay
+              done
+              ;;
+            stop)
+              if [[ -z ${3} ]]; then
+                  echo "spinner is not running.."
+                  exit 1
+              fi
+              kill $3 > /dev/null 2>&1
+              if [[ $2 -eq 0 ]]; then
+                  updated "${SPINNER_STAT} - DONE"
+              else
+                  failed "${SPINNER_STAT} - FAILED"
+              fi
+              ;;
+            *)
+              echo "invalid argument, try {start/stop}"
+              exit 1
+              ;;
+        esac
+    }
+
+    function start_spinner {
+        # $1 : msg to display
+        SPINNER_STAT="${1}"
+        _spinner "start" &
+        # set global spinner pid
+        _sp_pid=$!
+        disown
+    }
+
+    function stop_spinner {
+        # $1 : command exit status
+        _spinner "stop" $1 $_sp_pid
+        unset _sp_pid
+    }
+
 
     function spinner() { 
       local pid=$1 
+      local msg=${2-""}
+      local end=${3-""}
       local delay=0.25 
       while [ $(ps -eo pid | grep $pid) ]; do 
         for i in \| / - \\; do 
-          printf ' [%c]\b\b\b\b' $i 
+          printf ' [%c]\b\b\b\b' $i
           sleep $delay 
         done 
       done 
