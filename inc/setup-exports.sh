@@ -15,6 +15,7 @@
 
   #DOWNLOAD SETUP PATHS
   export BASHFUL_SETUP_BIN="${BASHFUL_SETUP_ROOT}/bin"
+  export BASHFUL_PROFILE="default"
 #----------------------
 
 

@@ -139,19 +139,28 @@
   }
 
 
+  function make_dirs() {
+    local dirs=("${@}")
+    for d in "${dirs[@]}"; do
+      if [ ! -d "${d}" ]; then
+        make_dir "$d"
+      fi
+    done
+  }
+  
 
   function make_dir() {
-      local BUILD_DIR=$1
-      started "Looking for ${BUILD_DIR}"
-      mkdir -p "$BUILD_DIR"
-      if [ $? -eq 0 ]
-        then
-          updated "Created directory ${white}${BUILD_DIR}${reset}"
-          true
-        else
-          problem "Cannot build ${BUILD_DIR} directory"
-          false
-      fi 
+    local BUILD_DIR=$1
+    started "Looking for ${BUILD_DIR}"
+    mkdir -p "$BUILD_DIR"
+    if [ $? -eq 0 ]
+      then
+        updated "Created directory ${white}${BUILD_DIR}${reset}"
+        true
+      else
+        problem "Cannot build ${BUILD_DIR} directory"
+        false
+    fi 
   }
 
   #----------------------
@@ -322,48 +331,50 @@
 
   #----------------------
     SPINNER_STAT=""
+    SPINNER_ON=0
     function _spinner() {
-        # $1 start/stop
-        #
-        # on start: $2 display message
-        # on stop : $2 process exit status
-        #           $3 spinner function pid (supplied from stop_spinner)        
-        case $1 in
-            start)
-              i=1
-              sp='\|/-'
-              delay=0.15
-              # calculate the column where spinner and status msg will be displayed
-              #let column=$(tput cols)-${#2}-8
-              let column=4
-
-              # display message and position the cursor in $column column
-              started "${SPINNER_STAT}"
-              printf "%${column}s"
-              # start spinner
-              while :
-              do
-                printf "\b${sp:i++%${#sp}:1}"
-                sleep $delay
-              done
-              ;;
-            stop)
-              if [[ -z ${3} ]]; then
-                  echo "spinner is not running.."
-                  exit 1
-              fi
-              kill $3 > /dev/null 2>&1
-              if [[ $2 -eq 0 ]]; then
-                  updated "${SPINNER_STAT} - DONE"
-              else
-                  failed "${SPINNER_STAT} - FAILED"
-              fi
-              ;;
-            *)
-              echo "invalid argument, try {start/stop}"
-              exit 1
-              ;;
-        esac
+      # $1 start/stop
+      #
+      # on start: $2 display message
+      # on stop : $2 process exit status
+      #           $3 spinner function pid (supplied from stop_spinner)        
+      case $1 in
+          start)
+            i=1
+            sp='\|/-'
+            delay=0.15
+            # calculate the column where spinner and status msg will be displayed
+            #let column=$(tput cols)-${#2}-8
+            let column=4
+            # display message and position the cursor in $column column
+            SPINNER_ON=1
+            started "${SPINNER_STAT}"
+            printf "%${column}s"
+            # start spinner
+            while :
+            do
+              printf "\b${sp:i++%${#sp}:1}"
+              sleep $delay
+            done
+            ;;
+          stop)
+            if [[ -z ${3} ]]; then
+                echo "spinner is not running.."
+                exit 1
+            fi
+            kill $3 > /dev/null 2>&1
+            if [[ $2 -eq 0 ]]; then
+                updated "${SPINNER_STAT} - DONE"
+            else
+                failed "${SPINNER_STAT} - FAILED"
+            fi
+            SPINNER_ON=0
+            ;;
+          *)
+            echo "invalid argument, try {start/stop}"
+            exit 1
+            ;;
+      esac
     }
 
     function start_spinner {
@@ -382,19 +393,19 @@
     }
 
 
-    function spinner() { 
-      local pid=$1 
-      local msg=${2-""}
-      local end=${3-""}
-      local delay=0.25 
-      while [ $(ps -eo pid | grep $pid) ]; do 
-        for i in \| / - \\; do 
-          printf ' [%c]\b\b\b\b' $i
-          sleep $delay 
-        done 
-      done 
-      printf '\b\b\b\b'
-    }
+    # function spinner() { 
+    #   local pid=$1 
+    #   local msg=${2-""}
+    #   local end=${3-""}
+    #   local delay=0.25 
+    #   while [ $(ps -eo pid | grep $pid) ]; do 
+    #     for i in \| / - \\; do 
+    #       printf ' [%c]\b\b\b\b' $i
+    #       sleep $delay 
+    #     done 
+    #   done 
+    #   printf '\b\b\b\b'
+    # }
 
     function download(){
         local url=$1
@@ -430,27 +441,3 @@
   #----------------------
 
 
-  #----------------------
-    function exit_signal() {
-      if [ $? -ne 0 ]; then exit_error $?; 
-      else 
-        info "[${OPT_COMMAND}] Finished."
-      fi
-    }
-
-
-    function throw_error() {
-      ERORR_MESSAGE=$1
-      #error "$1" 1>&2
-      exit 1
-    }
-
-
-    function exit_error() {
-     #clean_up $1
-     error "$ERORR_MESSAGE" #TODO:fix to use stderr
-     recover
-     bashful_usage
-     return $1
-    }
-  #----------------------
