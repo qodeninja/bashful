@@ -14,7 +14,7 @@
     PATH_BASH_RC="$HOME/.bashrc"
     TEMP_DIR='/tmp/'
 
-
+    VAR_TAR_NAME='profile-original'
   #----------------------
 
 
@@ -31,9 +31,52 @@
       bashful_welcome "Bashful Util"
       update_path $BASHFUL_SETUP_BIN
       update_path $PATH_BASHFUL_BIN
-      backup_sys_profile 
+      backup_sys_profile
+
       check_setup_state
+      #recover inappropraite setup
+      if [ $? -ne 0 ]; then
+        updated "Setup started"
+        bashful_setup
+        touch $PATH_BASHFUL_USER_INCOMPLETE_FILE
+        check_setup_state
+      fi
+
       check_install_state
+      if [ $? -ne 0 ]; then
+        touch $PATH_BASHFUL_USER_INCOMPLETE_FILE
+        updated "Install started"
+      fi
+
+      check_default_profile
+
+      if [ $? -ne 0 ]; then
+        bashful_profile
+      fi
+
+      #rmobj $PATH_BASHFUL_USER_INCOMPLETE_FILE
+      #if SETUP_DONE && INSTALL_DONE => REMOVE INC
+      #
+      bashful_exit
+    }
+
+    function bashful_setup() {
+      start_spinner "Creating Bashful Dirs"
+        sleep 3
+        make_dirs "${PATH_BASHFUL_ROOT}" "${PATH_BASHFUL_BIN}" "${PATH_BASHFUL_PROFILES}" "${PATH_BASHFUL_BACKUP}"
+        update_path "${PATH_BASHFUL_BIN}"
+      stop_spinner $?
+    }
+
+    function bashful_profile() {
+      if [ $OPT_PROFILE -eq 1 ]; then
+        start_spinner "Making Profilies"
+          sleep 3
+          build_bashful_profile
+        stop_spinner $?
+      else
+        concern "Bash starter profile not created"
+      fi
     }
 
     function bashful_uninstall() {
@@ -49,6 +92,10 @@
       warn "Bashful Nuke is not implemented yet"
     }
 
+    function bashful_exit() {
+      warn "Bashful Exit"
+    }
+
     function bashful_usage() {
 			cat <<-EOF
 				Usage: bashful [-cdnt] <command> [subcommand]
@@ -57,228 +104,109 @@
   #-----------------------------------------------------------------
 
 
-  #-----------------------------------------------------------------
-    function bashful_test() {
-
-      #SETUP
-      if [ -n "$BASHFUL_SETUP_BIN" ]; then
-        updated "Setup variable ready"
-      else
-        failed "Setup variable is missing"
-      fi
-
-      #SETUP CWD
-      if ! inpath "$BASHFUL_SETUP_BIN"; then
-        updated "PATH variable ready"
-      else 
-        failed "PATH missing setup bin path"
-      fi
-
-      #BASHFUL INSTALLED
-      if [ -e "$PATH_BASHFUL_ROOT" ]; then
-        updated "Bashful root ready"
-      else
-        concern "Bashful root not found"
-      fi
-
-      #BASHFUL SETUPFILE
-      if [ -e "$PATH_BASHFUL_USER_INSTALL_FILE" ]; then
-        updated "Bashful setup file ready"
-      else
-        concern "Bashful setup file not created"
-      fi
-
-      if [ "$OPT_DEBUG" = 1 ]; then 
-        updated "Debug On"
-      else
-        concern "Debug Off"
-      fi
-
-      if [ "$OPT_AUTO" = 1 ]; then 
-        updated "Automate On"
-      else
-        concern "Auto Off"
-      fi
-
-      if [ "$OPT_CLEAN" = 1 ]; then 
-        updated "Clean On"
-      else
-        concern "Clean Off"
-      fi 
-
-      if [ "$OPT_NUKE" = 1 ]; then 
-        updated "Nuke On"
-      else
-        concern "Nuke Off"
-      fi 
-
-    }
-  #-----------------------------------------------------------------
-
-
 
   #-----------------------------------------------------------------
     function check_setup_state() {
+      local ERROR_MSG=()
       STAT_SETUP_DONE=0   
-      STAT_SETUP_ERROR=0
         
       if [ -n "$BASHFUL_SETUP_ROOT" ]; then
-        #setup root - location of unpacked util (pwd/bashful)
-        updated "[check] /pwd/bashful set"
-      else
-        STAT_SETUP_ERROR=1   
-        recover "bashful root install location is missing"
+        updated "[setup] /pwd/bashful set"
+      else 
+        ERROR_MSG+=("[setup] bashful root install location is missing")
+        recover "error <BASHFUL_SETUP_ROOT>"
       fi
       
-
       if [ -n "$BASHFUL_SETUP_BIN" ] && [ -e "$BASHFUL_SETUP_BIN" ]; then
-        #setup bin - location of exec util (pwd/bashful/bin)
-        updated "[check] /pwd/bashful/bin set"
+        updated "[setup] /pwd/bashful/bin set"
       else
-        STAT_SETUP_ERROR=1   
-        recover "bashful root bin location is missing"
+        ERROR_MSG+=("[setup] bashful root bin location is missing")
+        recover "error <BASHFUL_SETUP_BIN>"
       fi
-
 
       if [ -n "$PATH_BASHFUL_INSTALL" ] && [ -e "$PATH_BASHFUL_INSTALL" ]; then 
-        #install - location of user home or package dir  (~/)
-         updated "[check] ~/ set"
+         updated "[setup] ~/ set"
       else
-        STAT_SETUP_ERROR=1
-        recover "setup install root <PATH_BASHFUL_INSTALL> is missing - usually user home directory"
+        ERROR_MSG+=("[setup] install root <PATH_BASHFUL_INSTALL> is missing - usually user home directory")
+        recover "error <PATH_BASHFUL_INSTALL>"
       fi
-
 
       if [ -n $PATH_BASHFUL_ROOT ] && [ -e $PATH_BASHFUL_ROOT ]; then 
-        #user root - need to exist before we can add stuff to it (~/.bashful)
-        updated "[check] ~/.bashful set"
+        updated "[setup] ~/.bashful set"
       else
-        #doesnt exist
-        STAT_SETUP_ERROR=1
-        recover "setup <PATH_BASHFUL_ROOT> is missing - usually ~/.bashful"
+        ERROR_MSG+=("[setup] <PATH_BASHFUL_ROOT> is missing (~/.bashful)") 
+        recover "error <PATH_BASHFUL_ROOT>"
       fi
-
 
       if [ -n $PATH_BASHFUL_BIN ] && [ -e $PATH_BASHFUL_BIN ]; then 
-        #user root - need to exist before we can add stuff to it (~/.bashful/bin)
-        updated "[check] ~/.bashful/bin set"
+        updated "[setup] ~/.bashful/bin set"
       else
-        STAT_SETUP_ERROR=1
-        recover "setup <PATH_BASHFUL_BIN> is missing"
+        ERROR_MSG+=("[setup] <PATH_BASHFUL_BIN> is missing")
+        recover "error <PATH_BASHFUL_BIN>"
       fi
-
 
       if inpath "$PATH_BASHFUL_BIN"; then 
-        #setup bin - needs to be in PATH for easy execution
-        updated "[check] ${PATH_BASHFUL_BIN} in PATH"
+        updated "[setup] ${PATH_BASHFUL_BIN} in PATH"
       else
-        STAT_SETUP_ERROR=1
-        recover "add <PATH_BASHFUL_BIN> to PATH var"
+        ERROR_MSG+=("[setup] <PATH_BASHFUL_BIN> to PATH var")
+        recover "error <PATH_BASHFUL_BIN>" 
       fi
 
-      #TODO:this is broken cuz of symlink
-      if [ -L $BASHFUL_SETUP_BIN ] && inpath "$(readlink -n $BASHFUL_SETUP_BIN)"; then
-        updated "[check] ${BASHFUL_SETUP_BIN} symlink in PATH"
-      elif inpath "$BASHFUL_SETUP_BIN"; then 
-        #setup bin - needs to be in PATH for easy execution
-        updated "[check] ${BASHFUL_SETUP_BIN} in PATH"
+      if [ ${#ERROR_MSG[@]} -gt 0 ]; then
+        for data in "${ERROR_MSG[@]}"
+        do
+          if [ -n "$data" ]; then
+            failed "${data}"
+          fi
+        done
+        #exit 1
+        false
       else
-        STAT_SETUP_ERROR=1
-        recover "add <BASHFUL_SETUP_BIN> to PATH var"
-      fi
-
-      if [ $STAT_SETUP_ERROR -eq 1 ]; then
-        path
-        failed "Setup problem in state check"
-        exit 1
-      fi
-
+        pass "Setup Check Done!"
+        STAT_SETUP_DONE=1
+        true
+      fi      
     }
   
-  
-    # function check_state() {
-    #   STAT_INSTALLED=0
-    #   STAT_INCOMPLETE=0
-    #   STAT_PROFILE=0
-    #   STAT_ERROR=0
-    #   STAT_DONE=0  
-
-
-    #   STAT_INSTALL_ERROR=0
-    #   STAT_PROFILE=ERROR=0
-
-
-    #   if [ -e $PATH_BASHFUL_ROOT ] && [ -f $PATH_BASHFUL_USER_INSTALL_FILE ] && [ ! -f $PATH_BASHFUL_USER_INCOMPLETE_FILE ]; then
-    #     #install state requires ~/.bashful and ~/.bashful/.installed and not ~/.bashful/.incomplete
-    #     STAT_INSTALLED=1
-    #   else
-    #     #otherwise install is not done
-    #     STAT_INSTALLED=0
-
-    #     #check for incomplete file -- usually when install has started and not finished
-    #     if [ -f $PATH_BASHFUL_USER_INCOMPLETE_FILE ]; then
-    #       STAT_INCOMPLETE=1
-    #     fi
-
-    #     #check for installed file -- should not exist if install is not done - this needs a cleanup
-    #     if [ -f $PATH_BASHFUL_USER_INSTALL_FILE ]; then
-    #       STAT_INSTALL_ERROR=1
-    #     fi
-
-    #   fi
-
-    #   #PROFILES
-
-    #   if [ -e $PATH_BASHFUL_PROFILES ]
-
-
-    # }
 
 
     function check_install_state() {
-      #check if ~/.bashful exists
-      started "Checking Bashful install state"
+      local ERROR_MSG=()
+      STAT_INSTALL_DONE=0   
+
       if [ -e $PATH_BASHFUL_ROOT ] && [ -f $PATH_BASHFUL_USER_INSTALL_FILE ] && [ ! -f $PATH_BASHFUL_USER_INCOMPLETE_FILE ]; then
-        #install is done
-        updated "Bashful is fully installed."
-        fake_uninstall_bashful
+        updated "[install] ~/.bashful/.installed"
+        STAT_INSTALL_DONE=1
       else
-        #not installed yet
-        if [ ! -f $PATH_BASHFUL_USER_INSTALL_FILE ]; then
-          #new install
-          failed "Bashful not installed."
+        ERROR_MSG+=("[install]  <PATH_BASHFUL_ROOT> is missing (~/.bashful/.installed)") 
+        recover "error <PATH_BASHFUL_ROOT>/.installed"
+      fi
 
-          start_spinner "Installing Bashful Dirs"
-            sleep 3
-            make_dirs "${PATH_BASHFUL_ROOT}" "${PATH_BASHFUL_BIN}" "${PATH_BASHFUL_PROFILES}" "${PATH_BASHFUL_BACKUP}"
-          stop_spinner $?
-
-          if [ $OPT_PROFILE -eq 1 ]; then
-            #build_bashful_profile
-            
-            start_spinner "Making Profilies"
-              sleep 3
-              build_bashful_profile
-            stop_spinner $?
-
-          else
-            concern "Bash starter profile not created"
-          fi
-
-          fake_install_bashful
-
+      if [ ! -f $PATH_BASHFUL_USER_INCOMPLETE_FILE ]; then
+          updated "[install] No incomplete marker ~/.bashful/.incomplete"
         else
-          if [ -f $PATH_BASHFUL_USER_INCOMPLETE_FILE ]; then
-            #unfinished install
-            problem "Bashful has not finished installing."
+          STAT_INSTALL_DONE=0
+          ERROR_MSG+=("[install] incomplete file found (~/.bashful/.incomplete)") 
+          recover "error <PATH_BASHFUL_ROOT>/.incomplete"
+      fi
+
+      if [ ${#ERROR_MSG[@]} -gt 0 ]; then
+        for data in "${ERROR_MSG[@]}"
+        do
+          if [ -n "$data" ]; then
+            failed "${data}"
           fi
-          fake_uninstall_bashful
-        fi
+          # do something on $var
+        done
+        exit 1
+      else
+        pass "Install Check Done!"
       fi
     }
 
-
-
+    function check_default_profile() {
+      STAT_PROFILE_DONE=0
+    }
   #-----------------------------------------------------------------
 
 
@@ -305,6 +233,7 @@
       remobj $PATH_BASHFUL_ROOT
       remobj $PATH_BASHFUL_USER_INSTALL_FILE
       remobj $PATH_BASHFUL_PROFILES
+      rm -f ./prof*.tar
     }
   #-----------------------------------------------------------------
 
@@ -332,15 +261,14 @@
         touch_dir_files "${PATH_PROFILE}" .path .alias .env .cache .project .version
         updated "Bashful Profile (${cyan}${PROFILE_NAME}${reset}) profile started!"
       else
-        warn "Careful ${PROFILE_NAME} profile already exists"
+        problem "Careful ${PROFILE_NAME} profile already exists"
       fi
     }
 
 
     function backup_sys_profile() {
       local FILES=("${USER_PROFILE_FILES[@]}")
-      started "Backing up user files"
-
+      #started "Backing up user files\n"
       #keep only existing files
       for i in ${!FILES[@]}; do
         file="$HOME/${FILES[$i]}"
@@ -351,18 +279,24 @@
         fi
       done
 
-      BAK_PROFILE_ORIGINAL="${PATH_BASHFUL_BACKUP}/profile-original.tar"
-      echo -e "backup file is $BAK_PROFILE_ORIGINAL"
+      BAK_PROFILE_ORIGINAL="${PATH_BASHFUL_BACKUP}/${VAR_TAR_NAME}.tar"
+      #echo -e "\nbackup file is $BAK_PROFILE_ORIGINAL"
 
-      if [ ! -f "${BAK_PROFILE_ORIGINAL}" ] && [ ! -f "./profile-original.tar" ]; then
+      if [ ! -f "${BAK_PROFILE_ORIGINAL}" ] && [ ! -f "./${VAR_TAR_NAME}.tar" ]; then
         warn "profile original not found at ${BAK_PROFILE_ORIGINAL}"
-        util_tarup "profile-original" "${FILES[@]}"
+        util_tarup "${VAR_TAR_NAME}" "${FILES[@]}"
       else
-        info "making copy of profile"
         util_tarup "profile-$(filetime)" "${FILES[@]}"
       fi
 
-      updated "Back up user files done => ${white}${TAR_FILE}${reset}"
+      if [ $? -eq 0 ]; then
+          updated "Back up user files done => ${white}${TAR_FILE}${reset}"
+          true
+        else
+          problem "Problem creating profile backup"
+          false
+      fi
+      
     }
   #-----------------------------------------------------------------
   
@@ -398,6 +332,7 @@
 
   #----------------------
     function exit_signal() {
+
       if [ $? -ne 0 ]; then exit_error $?; 
       else 
         info "[${OPT_COMMAND}] Finished."
@@ -414,9 +349,13 @@
 
     function exit_error() {
      clean_up $1
+     force_stop_spinner
      error "$ERORR_MESSAGE" #TODO:fix to use stderr
      recover
      bashful_usage
      return $1
     }
   #----------------------
+
+
+

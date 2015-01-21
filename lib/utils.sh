@@ -280,6 +280,19 @@
 
 
   #----------------------
+
+    function label(){
+      quicksleep
+      str=$1
+      printf "\r${purple}${str}${reset}${clear_eol}" 
+    }
+
+    function labeldone(){
+      quicksleep
+      str=$1
+      printf "\r${whitedim}${str}${reset}${clear_eol}" 
+    }
+
     function started(){
       quicksleep
       str=$1
@@ -348,7 +361,7 @@
             let column=4
             # display message and position the cursor in $column column
             SPINNER_ON=1
-            started "${SPINNER_STAT}"
+            label "${SPINNER_STAT}"
             printf "%${column}s"
             # start spinner
             while :
@@ -356,6 +369,7 @@
               printf "\b${sp:i++%${#sp}:1}"
               sleep $delay
             done
+            labeldone "Done"
             ;;
           stop)
             if [[ -z ${3} ]]; then
@@ -364,7 +378,8 @@
             fi
             kill $3 > /dev/null 2>&1
             if [[ $2 -eq 0 ]]; then
-                updated "${SPINNER_STAT} - DONE"
+                updated "${SPINNER_STAT} - DONE!"
+                unset SPINNER_PID
             else
                 failed "${SPINNER_STAT} - FAILED"
             fi
@@ -383,6 +398,7 @@
         _spinner "start" &
         # set global spinner pid
         _sp_pid=$!
+        SPINNER_PID=_sp_pid
         disown
     }
 
@@ -392,20 +408,9 @@
         unset _sp_pid
     }
 
-
-    # function spinner() { 
-    #   local pid=$1 
-    #   local msg=${2-""}
-    #   local end=${3-""}
-    #   local delay=0.25 
-    #   while [ $(ps -eo pid | grep $pid) ]; do 
-    #     for i in \| / - \\; do 
-    #       printf ' [%c]\b\b\b\b' $i
-    #       sleep $delay 
-    #     done 
-    #   done 
-    #   printf '\b\b\b\b'
-    # }
+    function force_stop_spinner() {
+      kill $SPINNER_PID > /dev/null 2>&1
+    }
 
     function download(){
         local url=$1

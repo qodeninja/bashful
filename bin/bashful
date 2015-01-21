@@ -94,9 +94,9 @@
 
 
   #----------------------
-    if [ $OPT_TEST -eq 1 ] ; then
-      bashful_test
-    fi
+    # if [ $OPT_TEST -eq 1 ] ; then
+    #   bashful_test
+    # fi
 
     if [ $OPT_CLEAN -eq 1 ]; then
       bashful_clean
