@@ -10,7 +10,6 @@
 
   #USER CONFIG FILES
   export PATH_BASHFUL_USER_INSTALL_FILE="${PATH_BASHFUL_ROOT}/.installed"
-  
   export PATH_BASHFUL_USER_INCOMPLETE_FILE="${PATH_BASHFUL_INSTALL}/.incomplete"
   export PATH_BASHFUL_LOG="${PATH_BASHFUL_INSTALL}/bashful.log" 
 
@@ -22,12 +21,10 @@
 
 #----------------------
   function bashful_cmd(){
-
     local CMD="$1"
     local BASHFUL="${BASHFUL_SETUP_BIN}/bashful"
     shift
     $BASHFUL $CMD "$@"
-
   }
 
   alias bashful="bashful_cmd"
@@ -35,3 +32,5 @@
   alias bfdir="cd ${BASHFUL_SETUP_ROOT}"
 #----------------------
 
+
+export STAT_BASHFUL_EXPORT=1

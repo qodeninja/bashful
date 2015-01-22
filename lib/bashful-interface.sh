@@ -36,7 +36,7 @@
         updated "Install started"
       fi
 
-      check_default_profile
+      check_profile_state
 
       if [ $? -ne 0 ]; then
         bashful_profile
@@ -133,7 +133,7 @@
       #bash deref ${!var}
       for data in "${sv[@]}"
       do
-        [ -n "${!data}" ] && [ -e "${!data}" ] && updated "[$lbl] ${!data} set" || ERROR_MSG+=("${data}")
+        [ -n "${!data}" ] && [ -r "${!data}" ] && updated "[$lbl] ${!data} set" || ERROR_MSG+=("${data}")
       done
       #last check
       inpath "${!sv[4]}" && updated "[setup] ~/.bashful/bin in PATH" || ERROR_MSG+=("[setup] <${sv[4]}> to PATH var")
@@ -143,6 +143,7 @@
         do
           if [ -n "$data" ]; then
             failed "[$lbl] $data $err"
+            #add to repair list
           fi
         done
         fail "Setup validation failed"
@@ -159,10 +160,42 @@
 
 
   #-----------------------------------------------------------------
+    
+    function run_install() {
+      check_install_state
+      if [ $? -ne 0 ]; then
+        touch $PATH_BASHFUL_USER_INCOMPLETE_FILE
+        updated "Install started"
+      fi
+    }
+
     function check_install_state() {
+      local retry=$1
+      [ $retry -eq 0 ] && header "Install Check" || header "Retry Install Check (${retry})" 
+
       local ERROR_MSG=()
       STAT_INSTALL_DONE=0   
-      header "Install Check"
+
+      local lbl="install"
+      local err="not ready"
+      local sv=( "PATH_BASHFUL_BACKUP"   \             
+                 "PATH_BASHFUL_INSTALL"  \
+                 "PATH_BASHFUL_ROOT"     \
+                 "PATH_BASHFUL_BIN"      \
+                 "PATH_BASHFUL_PROFILES" )
+
+      #export OK
+      #setup OK
+      #profile backup OK
+      #install OK
+      #profile OK
+
+      for data in "${sv[@]}"
+      do
+        [ -n "${!data}" ] && [ -r "${!data}" ] && updated "[$lbl] ${!data} set" || ERROR_MSG+=("${data}")
+      done
+
+      #hmm
       if [ -e $PATH_BASHFUL_ROOT ] && [ -f $PATH_BASHFUL_USER_INSTALL_FILE ] && [ ! -f $PATH_BASHFUL_USER_INCOMPLETE_FILE ]; then
         updated "[install] ~/.bashful/.installed"
         STAT_INSTALL_DONE=1
@@ -171,6 +204,7 @@
         recover "error <PATH_BASHFUL_ROOT>/.installed"
       fi
 
+      #do we need this?
       if [ ! -f $PATH_BASHFUL_USER_INCOMPLETE_FILE ]; then
           updated "[install] No incomplete marker ~/.bashful/.incomplete"
         else
@@ -193,7 +227,7 @@
       fi
     }
 
-    function check_default_profile() {
+    function check_profile_state() {
       STAT_PROFILE_DONE=0
     }
   #-----------------------------------------------------------------
