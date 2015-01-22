@@ -28,8 +28,7 @@
       update_path $BASHFUL_SETUP_BIN
       update_path $PATH_BASHFUL_BIN
       backup_sys_profile
-
-      run_setup
+      bashful_setup
 
       check_install_state
       if [ $? -ne 0 ]; then
@@ -49,14 +48,7 @@
       bashful_exit
     }
 
-    function bashful_setup() {
-      start_spinner "Creating Bashful Dirs"
-        sleep 3
-        make_dirs "${PATH_BASHFUL_ROOT}" "${PATH_BASHFUL_BIN}" "${PATH_BASHFUL_PROFILES}" "${PATH_BASHFUL_BACKUP}"
-        update_path "${PATH_BASHFUL_BIN}"
-        touch $PATH_BASHFUL_USER_INCOMPLETE_FILE
-      stop_spinner $?
-    }
+
 
     function bashful_profile() {
       if [ $OPT_PROFILE -eq 1 ]; then
@@ -96,17 +88,27 @@
 
 
   #-----------------------------------------------------------------
+
     function run_setup() {
+      start_spinner "Creating Bashful Dirs"
+        sleep 3
+        make_dirs "${PATH_BASHFUL_ROOT}" "${PATH_BASHFUL_BIN}" "${PATH_BASHFUL_PROFILES}" "${PATH_BASHFUL_BACKUP}"
+        update_path "${PATH_BASHFUL_BIN}"
+        touch $PATH_BASHFUL_USER_INCOMPLETE_FILE
+      stop_spinner $?
+    }
+
+    function bashful_setup() {
       local attempts=0;
-      if check_setup_state; then
+      if check_setup_state $attempts; then
         pass "Setup OK"
       else
         warn "Setup not complete, attempting recovery"
         #lazy setup
         while [ $STAT_SETUP_DONE -ne 1 ] && [ $attempts -lt 1 ]; do
           attempts=$((attempts + 1))
-          bashful_setup
-          check_setup_state
+          run_setup
+          check_setup_state $attempts
           info "Rechecking setup try:$attempts done:$STAT_SETUP_DONE"
           if [ $STAT_SETUP_DONE -eq 1 ]; then
             pass "Setup OK"
@@ -116,62 +118,34 @@
       fi
     }
 
-
-
     function check_setup_state() {
+      local retry=$1
+      [ $retry -eq 0 ] && header "Setup Check" || header "Retry Setup Check (${retry})" 
+      STAT_SETUP_DONE=0  
       local ERROR_MSG=()
-      STAT_SETUP_DONE=0   
-      header "Setup Check"
-      if [ -n "$BASHFUL_SETUP_ROOT" ]; then
-        updated "[setup] /pwd/bashful set"
-      else 
-        ERROR_MSG+=("[setup] bashful root install location is missing")
-        #recover "error <BASHFUL_SETUP_ROOT>"
-      fi
-      
-      if [ -n "$BASHFUL_SETUP_BIN" ] && [ -e "$BASHFUL_SETUP_BIN" ]; then
-        updated "[setup] /pwd/bashful/bin set"
-      else
-        ERROR_MSG+=("[setup] bashful root bin location is missing")
-        #recover "error <BASHFUL_SETUP_BIN>"
-      fi
-
-      if [ -n "$PATH_BASHFUL_INSTALL" ] && [ -e "$PATH_BASHFUL_INSTALL" ]; then 
-         updated "[setup] ~/ set"
-      else
-        ERROR_MSG+=("[setup] install root <PATH_BASHFUL_INSTALL> is missing - usually user home directory")
-        #recover "error <PATH_BASHFUL_INSTALL>"
-      fi
-
-      if [ -n $PATH_BASHFUL_ROOT ] && [ -e $PATH_BASHFUL_ROOT ]; then 
-        updated "[setup] ~/.bashful set"
-      else
-        ERROR_MSG+=("[setup] <PATH_BASHFUL_ROOT> is missing (~/.bashful)") 
-        #recover "error <PATH_BASHFUL_ROOT> missing"
-      fi
-
-      if [ -n $PATH_BASHFUL_BIN ] && [ -e $PATH_BASHFUL_BIN ]; then 
-        updated "[setup] ~/.bashful/bin set"
-      else
-        ERROR_MSG+=("[setup] <PATH_BASHFUL_BIN> is missing")
-        #recover "error <PATH_BASHFUL_BIN>"
-      fi
-
-      if inpath "$PATH_BASHFUL_BIN"; then 
-        updated "[setup] ${PATH_BASHFUL_BIN} in PATH"
-      else
-        ERROR_MSG+=("[setup] <PATH_BASHFUL_BIN> to PATH var")
-        #recover "error <PATH_BASHFUL_BIN> not in PATH" 
-      fi
-
+      local lbl="setup"
+      local err="not ready"
+      local sv=( "BASHFUL_SETUP_ROOT"   \
+                 "BASHFUL_SETUP_BIN"    \
+                 "PATH_BASHFUL_INSTALL" \
+                 "PATH_BASHFUL_ROOT"    \
+                 "PATH_BASHFUL_BIN" )
+      #bash deref ${!var}
+      for data in "${sv[@]}"
+      do
+        [ -n "${!data}" ] && [ -e "${!data}" ] && updated "[$lbl] ${!data} set" || ERROR_MSG+=("${data}")
+      done
+      #last check
+      inpath "${!sv[4]}" && updated "[setup] ~/.bashful/bin in PATH" || ERROR_MSG+=("[setup] <${sv[4]}> to PATH var")
+      #dump on error
       if [ ${#ERROR_MSG[@]} -gt 0 ]; then
         for data in "${ERROR_MSG[@]}"
         do
           if [ -n "$data" ]; then
-            failed "${data}"
+            failed "[$lbl] $data $err"
           fi
         done
-        failed "Setup has errors!"
+        fail "Setup validation failed"
         return 1
       else
         #pass "Setup Check Done!"
@@ -180,9 +154,11 @@
       fi 
 
     }
-  
+  #-----------------------------------------------------------------
 
 
+
+  #-----------------------------------------------------------------
     function check_install_state() {
       local ERROR_MSG=()
       STAT_INSTALL_DONE=0   
@@ -281,7 +257,7 @@
 
     function backup_sys_profile() {
       local FILES=("${USER_PROFILE_FILES[@]}")
-      #started "Backing up user files\n"
+      header "Backup Bash Profile"
       #keep only existing files
       for i in ${!FILES[@]}; do
         file="$HOME/${FILES[$i]}"

@@ -336,10 +336,10 @@
             fi
             kill $3 > /dev/null 2>&1
             if [[ $2 -eq 0 ]]; then
-                updated "${SPINNER_STAT} - DONE!"
+                pass "${SPINNER_STAT} - DONE!"
                 unset SPINNER_PID
             else
-                failed "${SPINNER_STAT} - FAILED"
+                fail "${SPINNER_STAT} - FAILED"
             fi
             SPINNER_ON=0
             ;;

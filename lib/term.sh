@@ -41,7 +41,7 @@ source "./lib/common.sh"
     }
 
     function fail() { 
-      console "${red}${fail2}${fail2} %s${reset}\n" "$@"
+      console "${red}${fail2} %s${reset}\n" "$@"
       return 1
     }
 
@@ -86,28 +86,33 @@ source "./lib/common.sh"
       lines=0
     }
 
+
     function started(){
       #lines=$((lines + 1))
       quicksleep
       str=$1
+      quiet=$2
       printf "\r${white}${str}... ${reset}" 
     }
 
     function updated(){
       quicksleep
       str=$1
+      quiet=$2
       printf "\r${green}${pass3}${reset} ${whitedim}${str}${reset}${clear_eol}\n" 
     }
 
     function problem(){
       quicksleep
       str=$1
+      quiet=$2
       printf "\r${orange}${delta}${reset} ${white}${str}${reset}${clear_eol}\n" 
     }
 
     function concern(){
       quicksleep
       str=$1
+      quiet=$2
       printf "\r${whitedim}${longbar}${reset} ${whitedim}${str}${reset}${clear_eol}\n" 
     }
 
@@ -115,6 +120,7 @@ source "./lib/common.sh"
     function failed(){
       quicksleep
       str=$1
+      quiet=$2
       printf "\r${red}${fail2}${reset} ${white}${str}${reset}${clear_eol}\n" 
     }
 

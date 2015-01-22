@@ -31,6 +31,7 @@
   }
 
   alias bashful="bashful_cmd"
+  alias bf="bashful_cmd"
   alias bfdir="cd ${BASHFUL_SETUP_ROOT}"
 #----------------------
 

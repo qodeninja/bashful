@@ -126,11 +126,11 @@
       help)
         echo 'lets install something yay'
         ;;
-      uninstall*)
+      un*)
         OPT_COMMAND="UNINSTALL"
         bashful_uninstall
         ;;
-      auto*|install*)
+      auto*|in*)
         OPT_COMMAND="INSTALL"
         bashful_install
         ;;
