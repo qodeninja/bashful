@@ -10,13 +10,21 @@
   arrow='\xE2\x9E\x9C';
   delta='\xE2\x96\xB3';
   longbar='\xE2\x80\x95';
+  circle='\xE2\x97\xAF';
+  info='\xE2\x93\x98';
+  redo='\xE2\x86\xBB ';
+  #arr1 0xE2 0x87 0xA7
+  #arr2 0xE2 0x87 0xAA
+  #redo 0xE2 0x86 0xBB 
 
-  # if command_exists tput && [ ! -z $len ]; then
 
   #back
   bold=$(tput bold)
   underline=$(tput sgr 0 1)
   clear_eol=$(tput el)
+  clear_bol=$(tput el1)
+  del_line=$(tput dl1)
+  up_line=$(tput cuu1)
   #el(from curr) el1(from beggining) el2(whole line)
   reset=$(tput sgr0)
 

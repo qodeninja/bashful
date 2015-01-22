@@ -39,7 +39,9 @@
   #----------------------
     function add_path() {
       for d; do
-        d=$(cd -- "$d" && { pwd -P || pwd; }) 2>/dev/null  # canonicalize symbolic links
+        if [ -e "$d" ]; then 
+          d=$(cd -- "$d" && { pwd -P || pwd; }) 2>/dev/null  # canonicalize symbolic links
+        fi
         if [ -z "$d" ]; then continue; fi  # skip nonexistent directory
         case ":$PATH:" in
           *":$d:"*) :;;
@@ -279,51 +281,7 @@
   #----------------------
 
 
-  #----------------------
 
-    function label(){
-      quicksleep
-      str=$1
-      printf "\r${purple}${str}${reset}${clear_eol}" 
-    }
-
-    function labeldone(){
-      quicksleep
-      str=$1
-      printf "\r${whitedim}${str}${reset}${clear_eol}" 
-    }
-
-    function started(){
-      quicksleep
-      str=$1
-      printf "\r${white}${str}... ${reset}" 
-    }
-
-    function updated(){
-      quicksleep
-      str=$1
-      printf "\r${green}${pass3}${reset} ${whitedim}${str}${reset}${clear_eol}\n" 
-    }
-
-    function problem(){
-      quicksleep
-      str=$1
-      printf "\r${orange}${delta}${reset} ${white}${str}${reset}${clear_eol}\n" 
-    }
-
-    function concern(){
-      quicksleep
-      str=$1
-      printf "\r${whitedim}${longbar}${reset} ${whitedim}${str}${reset}${clear_eol}\n" 
-    }
-
-
-    function failed(){
-      quicksleep
-      str=$1
-      printf "\r${red}${fail2}${reset} ${white}${str}${reset}${clear_eol}\n" 
-    }
-  #----------------------
 
 
   #----------------------
@@ -354,7 +312,7 @@
       case $1 in
           start)
             i=1
-            sp='\|/-'
+            sp='\|/-' #'╋╳' 
             delay=0.15
             # calculate the column where spinner and status msg will be displayed
             #let column=$(tput cols)-${#2}-8

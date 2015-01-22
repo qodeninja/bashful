@@ -9,11 +9,7 @@
 
   #----------------------
     USER_PROFILE_FILES=(.profile .bash_profile .bash_login .bashrc .bash_alias .alias .dircolors .bash_completion)
-    PATH_SYSTEM_PROFILE="/etc/profile"
-    PATH_BASH_PROFILE="$HOME/.bash_profile"
-    PATH_BASH_RC="$HOME/.bashrc"
     TEMP_DIR='/tmp/'
-
     VAR_TAR_NAME='profile-original'
   #----------------------
 
@@ -33,14 +29,7 @@
       update_path $PATH_BASHFUL_BIN
       backup_sys_profile
 
-      check_setup_state
-      #recover inappropraite setup
-      if [ $? -ne 0 ]; then
-        updated "Setup started"
-        bashful_setup
-        touch $PATH_BASHFUL_USER_INCOMPLETE_FILE
-        check_setup_state
-      fi
+      run_setup
 
       check_install_state
       if [ $? -ne 0 ]; then
@@ -65,6 +54,7 @@
         sleep 3
         make_dirs "${PATH_BASHFUL_ROOT}" "${PATH_BASHFUL_BIN}" "${PATH_BASHFUL_PROFILES}" "${PATH_BASHFUL_BACKUP}"
         update_path "${PATH_BASHFUL_BIN}"
+        touch $PATH_BASHFUL_USER_INCOMPLETE_FILE
       stop_spinner $?
     }
 
@@ -106,50 +96,72 @@
 
 
   #-----------------------------------------------------------------
+    function run_setup() {
+      local attempts=0;
+      if check_setup_state; then
+        pass "Setup OK"
+      else
+        warn "Setup not complete, attempting recovery"
+        #lazy setup
+        while [ $STAT_SETUP_DONE -ne 1 ] && [ $attempts -lt 1 ]; do
+          attempts=$((attempts + 1))
+          bashful_setup
+          check_setup_state
+          info "Rechecking setup try:$attempts done:$STAT_SETUP_DONE"
+          if [ $STAT_SETUP_DONE -eq 1 ]; then
+            pass "Setup OK"
+            break
+          fi
+        done
+      fi
+    }
+
+
+
     function check_setup_state() {
       local ERROR_MSG=()
       STAT_SETUP_DONE=0   
-        
+      header "Setup Check"
       if [ -n "$BASHFUL_SETUP_ROOT" ]; then
         updated "[setup] /pwd/bashful set"
       else 
         ERROR_MSG+=("[setup] bashful root install location is missing")
-        recover "error <BASHFUL_SETUP_ROOT>"
+        #recover "error <BASHFUL_SETUP_ROOT>"
       fi
       
       if [ -n "$BASHFUL_SETUP_BIN" ] && [ -e "$BASHFUL_SETUP_BIN" ]; then
         updated "[setup] /pwd/bashful/bin set"
       else
         ERROR_MSG+=("[setup] bashful root bin location is missing")
-        recover "error <BASHFUL_SETUP_BIN>"
+        #recover "error <BASHFUL_SETUP_BIN>"
       fi
 
       if [ -n "$PATH_BASHFUL_INSTALL" ] && [ -e "$PATH_BASHFUL_INSTALL" ]; then 
          updated "[setup] ~/ set"
       else
         ERROR_MSG+=("[setup] install root <PATH_BASHFUL_INSTALL> is missing - usually user home directory")
-        recover "error <PATH_BASHFUL_INSTALL>"
+        #recover "error <PATH_BASHFUL_INSTALL>"
       fi
 
       if [ -n $PATH_BASHFUL_ROOT ] && [ -e $PATH_BASHFUL_ROOT ]; then 
         updated "[setup] ~/.bashful set"
       else
         ERROR_MSG+=("[setup] <PATH_BASHFUL_ROOT> is missing (~/.bashful)") 
-        recover "error <PATH_BASHFUL_ROOT>"
+        #recover "error <PATH_BASHFUL_ROOT> missing"
       fi
 
       if [ -n $PATH_BASHFUL_BIN ] && [ -e $PATH_BASHFUL_BIN ]; then 
         updated "[setup] ~/.bashful/bin set"
       else
         ERROR_MSG+=("[setup] <PATH_BASHFUL_BIN> is missing")
-        recover "error <PATH_BASHFUL_BIN>"
+        #recover "error <PATH_BASHFUL_BIN>"
       fi
 
       if inpath "$PATH_BASHFUL_BIN"; then 
         updated "[setup] ${PATH_BASHFUL_BIN} in PATH"
       else
         ERROR_MSG+=("[setup] <PATH_BASHFUL_BIN> to PATH var")
-        recover "error <PATH_BASHFUL_BIN>" 
+        #recover "error <PATH_BASHFUL_BIN> not in PATH" 
       fi
 
       if [ ${#ERROR_MSG[@]} -gt 0 ]; then
@@ -159,13 +171,14 @@
             failed "${data}"
           fi
         done
-        #exit 1
-        false
+        failed "Setup has errors!"
+        return 1
       else
-        pass "Setup Check Done!"
+        #pass "Setup Check Done!"
         STAT_SETUP_DONE=1
-        true
-      fi      
+        return 0
+      fi 
+
     }
   
 
@@ -173,7 +186,7 @@
     function check_install_state() {
       local ERROR_MSG=()
       STAT_INSTALL_DONE=0   
-
+      header "Install Check"
       if [ -e $PATH_BASHFUL_ROOT ] && [ -f $PATH_BASHFUL_USER_INSTALL_FILE ] && [ ! -f $PATH_BASHFUL_USER_INCOMPLETE_FILE ]; then
         updated "[install] ~/.bashful/.installed"
         STAT_INSTALL_DONE=1
@@ -285,17 +298,21 @@
       if [ ! -f "${BAK_PROFILE_ORIGINAL}" ] && [ ! -f "./${VAR_TAR_NAME}.tar" ]; then
         warn "profile original not found at ${BAK_PROFILE_ORIGINAL}"
         util_tarup "${VAR_TAR_NAME}" "${FILES[@]}"
-      else
-        util_tarup "profile-$(filetime)" "${FILES[@]}"
-      fi
 
-      if [ $? -eq 0 ]; then
+        if [ $? -eq 0 ]; then
           updated "Back up user files done => ${white}${TAR_FILE}${reset}"
           true
         else
           problem "Problem creating profile backup"
           false
+        fi
+
+      else
+        updated "Found original profile backup"
+      #  util_tarup "profile-$(filetime)" "${FILES[@]}"
       fi
+
+
       
     }
   #-----------------------------------------------------------------
