@@ -25,19 +25,13 @@
 
     function bashful_install() {
       bashful_welcome "Bashful Util"
-      update_path $BASHFUL_SETUP_BIN
-      update_path $PATH_BASHFUL_BIN
-      backup_sys_profile
-      bashful_setup
 
-      check_install_state
-      if [ $? -ne 0 ]; then
-        touch $PATH_BASHFUL_USER_INCOMPLETE_FILE
-        updated "Install started"
-      fi
+      backup_sys_profile
+      do_setup
+      do_install
 
       check_profile_state
-
+      echo $SECONDS
       if [ $? -ne 0 ]; then
         bashful_profile
       fi
@@ -86,36 +80,75 @@
   #-----------------------------------------------------------------
 
 
-
   #-----------------------------------------------------------------
-
-    function run_setup() {
-      start_spinner "Creating Bashful Dirs"
-        sleep 3
-        make_dirs "${PATH_BASHFUL_ROOT}" "${PATH_BASHFUL_BIN}" "${PATH_BASHFUL_PROFILES}" "${PATH_BASHFUL_BACKUP}"
-        update_path "${PATH_BASHFUL_BIN}"
-        touch $PATH_BASHFUL_USER_INCOMPLETE_FILE
-      stop_spinner $?
-    }
-
-    function bashful_setup() {
-      local attempts=0;
-      if check_setup_state $attempts; then
-        pass "Setup OK"
+    
+    function check_run() {
+      #name=$1;flag=$2;tester=$3;runner=$4
+      local try=0;
+      local param=("${@}")
+      #debug "${param[0]} ${!param[1]} ${param[1]} ${param[3]} $SECONDS"
+      if "${param[2]}" $try; then pass "${param[0]} OK"
       else
-        warn "Setup not complete, attempting recovery"
+        warn "${param[0]} not complete, attempting recovery"
         #lazy setup
-        while [ $STAT_SETUP_DONE -ne 1 ] && [ $attempts -lt 1 ]; do
-          attempts=$((attempts + 1))
-          run_setup
-          check_setup_state $attempts
-          info "Rechecking setup try:$attempts done:$STAT_SETUP_DONE"
-          if [ $STAT_SETUP_DONE -eq 1 ]; then
-            pass "Setup OK"
+        while [ "${!param[1]}" -ne 1 ] && [ $try -lt 1 ]; do
+          try=$((try + 1))
+          ${param[3]}
+          ${param[2]} $try
+          info "Rechecking ${param[1]} try:$try done:${!param[1]}"
+          if [ ${!param[1]} -eq 1 ]; then
+            pass "${param[0]} OK"
             break
           fi
         done
       fi
+    }
+
+
+    function check_paths() {
+      local retry=$1
+      local name=$2
+      [ $retry -eq 0 ] && header "$name Check" || header "Retry $name Check (${retry})" 
+
+      local ERROR_MSG=()
+      local lbl="setup"
+      local err="not ready"
+      local paths=("${@}")
+
+      if [ ${#ERROR_MSG[@]} -gt 0 ]; then
+        for data in "${ERROR_MSG[@]}"
+        do
+          if [ -n "$data" ]; then
+            failed "[$lbl] $data $err"
+            #add to repair list
+          fi
+        done
+        #fail "Setup validation failed"
+        return 1
+      else
+        #pass "Setup Check Done!"
+        STAT_SETUP_DONE=1
+        return 0
+      fi 
+
+    }
+  #-----------------------------------------------------------------
+
+
+  #-----------------------------------------------------------------
+
+    function run_setup() {
+      start_spinner "Verifying Bashful Dirs"
+        sleep 3
+        make_dirs "${PATH_BASHFUL_ROOT}" "${PATH_BASHFUL_BIN}" "${PATH_BASHFUL_PROFILES}" "${PATH_BASHFUL_BACKUP}"
+        update_path "${BASHFUL_SETUP_BIN}"
+        update_path "${PATH_BASHFUL_BIN}"
+        touch $PATH_BASHFUL_INCOMPLETE_FILE
+      stop_spinner $?
+    }
+
+    function do_setup() {
+      check_run "setup" "STAT_SETUP_DONE" check_setup_state run_setup
     }
 
     function check_setup_state() {
@@ -125,11 +158,8 @@
       local ERROR_MSG=()
       local lbl="setup"
       local err="not ready"
-      local sv=( "BASHFUL_SETUP_ROOT"   \
-                 "BASHFUL_SETUP_BIN"    \
-                 "PATH_BASHFUL_INSTALL" \
-                 "PATH_BASHFUL_ROOT"    \
-                 "PATH_BASHFUL_BIN" )
+      local sv=( "BASHFUL_SETUP_ROOT" "BASHFUL_SETUP_BIN" "PATH_BASHFUL_INSTALL" "PATH_BASHFUL_ROOT" "PATH_BASHFUL_BIN" )
+
       #bash deref ${!var}
       for data in "${sv[@]}"
       do
@@ -146,7 +176,7 @@
             #add to repair list
           fi
         done
-        fail "Setup validation failed"
+        #fail "Setup validation failed"
         return 1
       else
         #pass "Setup Check Done!"
@@ -159,29 +189,34 @@
 
 
 
+
   #-----------------------------------------------------------------
-    
     function run_install() {
-      check_install_state
-      if [ $? -ne 0 ]; then
-        touch $PATH_BASHFUL_USER_INCOMPLETE_FILE
-        updated "Install started"
-      fi
+      start_spinner "Verifying Install Dirs"
+        sleep 3
+        make_dirs "${PATH_BASHFUL_ROOT}" "${PATH_BASHFUL_BIN}" "${PATH_BASHFUL_PROFILES}" "${PATH_BASHFUL_BACKUP}"
+        update_path "${PATH_BASHFUL_BIN}"
+        touch $PATH_BASHFUL_INSTALL_FILE 
+        rm $PATH_BASHFUL_INCOMPLETE_FILE
+      stop_spinner $?
+    }
+
+
+    function do_install() {
+      check_run "install" "STAT_INSTALL_DONE" check_install_state run_install
     }
 
     function check_install_state() {
       local retry=$1
       [ $retry -eq 0 ] && header "Install Check" || header "Retry Install Check (${retry})" 
-
-      local ERROR_MSG=()
       STAT_INSTALL_DONE=0   
-
+      local ERROR_MSG=()
       local lbl="install"
       local err="not ready"
-      local sv=( "PATH_BASHFUL_BACKUP"   \             
-                 "PATH_BASHFUL_INSTALL"  \
+      local sv=( "PATH_BASHFUL_BACKUP" "PATH_BASHFUL_INSTALL"  \
                  "PATH_BASHFUL_ROOT"     \
                  "PATH_BASHFUL_BIN"      \
+                 "PATH_BASHFUL_INSTALL_FILE" \
                  "PATH_BASHFUL_PROFILES" )
 
       #export OK
@@ -192,39 +227,36 @@
 
       for data in "${sv[@]}"
       do
-        [ -n "${!data}" ] && [ -r "${!data}" ] && updated "[$lbl] ${!data} set" || ERROR_MSG+=("${data}")
+        #echo "data( ${data} )"
+        [ ! -z "${data}" ] && [ -n "${!data}" ] && [ -r "${!data}" ] && updated "[$lbl] ${!data} set" || ERROR_MSG+=("${data}")
       done
 
-      #hmm
-      if [ -e $PATH_BASHFUL_ROOT ] && [ -f $PATH_BASHFUL_USER_INSTALL_FILE ] && [ ! -f $PATH_BASHFUL_USER_INCOMPLETE_FILE ]; then
-        updated "[install] ~/.bashful/.installed"
-        STAT_INSTALL_DONE=1
-      else
-        ERROR_MSG+=("[install]  <PATH_BASHFUL_ROOT> is missing (~/.bashful/.installed)") 
-        recover "error <PATH_BASHFUL_ROOT>/.installed"
-      fi
-
       #do we need this?
-      if [ ! -f $PATH_BASHFUL_USER_INCOMPLETE_FILE ]; then
+      if [ ! -f $PATH_BASHFUL_INCOMPLETE_FILE ]; then
           updated "[install] No incomplete marker ~/.bashful/.incomplete"
         else
           STAT_INSTALL_DONE=0
-          ERROR_MSG+=("[install] incomplete file found (~/.bashful/.incomplete)") 
-          recover "error <PATH_BASHFUL_ROOT>/.incomplete"
+          ERROR_MSG+=("PATH_BASHFUL_INCOMPLETE_FILE") 
+          echo "$PATH_BASHFUL_INCOMPLETE_FILE"
       fi
 
+      #dump on error
       if [ ${#ERROR_MSG[@]} -gt 0 ]; then
         for data in "${ERROR_MSG[@]}"
         do
           if [ -n "$data" ]; then
-            failed "${data}"
+            failed "[$lbl] $data $err"
+            #add to repair list
           fi
-          # do something on $var
         done
-        exit 1
+        #fail "Install validation failed"
+        return 1
       else
-        pass "Install Check Done!"
-      fi
+        #pass "Setup Check Done!"
+        STAT_INSTALL_DONE=1
+        return 0
+      fi 
+
     }
 
     function check_profile_state() {

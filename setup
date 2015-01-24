@@ -6,12 +6,12 @@
 
 
   #----------------------
-    COLOR_NONE='\e[0m';
+    x='\e[0m';
     COLOR_GREEN='\e[1;32m';
-    COLOR_RED='\e[0;31m';
-    COLOR_BLUE='\e[0;34m';
+    r='\e[0;31m';
+    b='\e[0;34m';
     COLOR_CYAN='\e[1;36m';
-    COLOR_GREY='\e[1;90m';
+    g='\e[1;90m';
     COLOR_WHITE='\e[0;37m';
     PASS='\xE2\x9C\x93';
     FAIL='\xE2\x9C\x97';
@@ -31,29 +31,25 @@
       
       #export paths and functions to setup BASHFUL
       export BASHFUL_SETUP_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+      source "./lib/common.sh"
       source "./inc/setup-exports.sh"
 
       #only echo instructions in terminal mode
       if [ -t 1 ]; then 
-        printf "\n\n${COLOR_GREEN}${PASS} Environment configured for Bashful${COLOR_NONE}\n\n"
-
+        printf "\n\n${g}${PASS} Environment configured for Bashful ($BASHFUL_EXPORT_MD5) ${x}\n\n"
         if [ -d $PATH_BASHFUL_ROOT ] && [ -f $PATH_BASHFUL_USER_INSTALL_FILE ] && [ ! -f $PATH_BASHFUL_USER_INCOMPLETE_FILE ]; then 
           printf "> Bashful is currently installed\n"
-          printf "${COLOR_BLUE} bashful uninstall ${COLOR_NONE}\n"
+          printf "${b} bashful uninstall ${x}\n"
         else
           printf "> Bashful is not currently installed\n"
-          printf "${COLOR_BLUE} bashful install ${COLOR_NONE}\n"
+          printf "${b} bashful install ${x}\n"
         fi
-
-        printf "${COLOR_BLUE} bashful clean ${COLOR_NONE}\n"
-        printf "${COLOR_BLUE} bashful help ${COLOR_NONE}\n"
-
+        printf "${b} bashful clean ${x}\n${b} bashful help ${x}\n"
       else
         true
       fi
-
     else
-      printf "\n\n${COLOR_RED}${FAIL} BASHFUL SETUP FAILED${COLOR_NONE}\n\n"
+      printf "\n\n${r}${FAIL} BASHFUL SETUP FAILED${x}\n\n"
       printf "> Bashful needs to setup environment variables before installing. \n"
       printf "Usage: source ./setup\n\n"
       false

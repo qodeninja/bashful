@@ -15,6 +15,17 @@ set -o pipefail
         printf "${1}\n" "${2}"
       fi
     }
+
+    function gunset(){
+      local PATTERN=$1
+      if [ -n $PATTERN ]; then
+        IFS="="
+        env | grep ${PATTERN} | while read -r line value ; do
+          #echo -e "$line"
+          unset $line
+        done
+      fi
+    }
   #----------------------
 
 

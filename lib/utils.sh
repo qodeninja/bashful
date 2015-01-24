@@ -106,8 +106,10 @@
     function gunset(){
       local PATTERN=$1
       if [ -n $PATTERN ]; then
-        env | grep ${PATTERN} | while read -r line ; do
-          echo -e "\nGrep on $line"
+        IFS="="
+        env | grep ${PATTERN} | while read -r line value ; do
+          echo -e "$line"
+          unset $line
         done
       fi
     }
