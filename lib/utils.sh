@@ -125,47 +125,62 @@
 
   #----------------------
   #install 
-  function touch_dir_files(){
-    local base=$1; shift
-    local files=("${@}")
-    if [ ! -d "${base}" ]; then
-      make_dir "$base"
-    fi
-    if [ $? -eq 0 ]; then
-      for f in "${files[@]}"; do
-        local fullpath="${base}/${f}"
-        #started "Looking for ${fullpath}"
-        if [ ! -f "${fullpath}" ]; then
-          touch "${fullpath}"
+    function touch_dir_files(){
+      local base=$1; shift
+      local files=("${@}")
+      if [ ! -d "${base}" ]; then
+        make_dir "$base"
+      fi
+      if [ $? -eq 0 ]; then
+        for f in "${files[@]}"; do
+          local fullpath="${base}/${f}"
+          #started "Looking for ${fullpath}"
+          if [ ! -f "${fullpath}" ]; then
+            touch "${fullpath}"
+          fi
+        done
+      fi
+    }
+
+
+    function make_dirs() {
+      local dirs=("${@}")
+      for d in "${dirs[@]}"; do
+        if [ ! -d "${d}" ]; then
+          make_dir "$d"
         fi
       done
-    fi
-  }
+    }
+    
 
+    function make_dir() {
+      local BUILD_DIR=$1
+      started "Looking for ${BUILD_DIR}"
+      mkdir -p "$BUILD_DIR"
+      if [ $? -eq 0 ]
+        then
+          updated "Created directory ${white}${BUILD_DIR}${reset}"
+          true
+        else
+          problem "Cannot build ${BUILD_DIR} directory"
+          false
+      fi 
+    }
 
-  function make_dirs() {
-    local dirs=("${@}")
-    for d in "${dirs[@]}"; do
-      if [ ! -d "${d}" ]; then
-        make_dir "$d"
-      fi
-    done
-  }
-  
+    function missing_dirs() {
+      local missing=()
+      local sv=("${@}")  
+      for i in "${!sv[@]}"; do
+        local p="${sv[$i]}"
+        [ -n "${!p}" ] && [ -r "${!p}" ] || missing+=("$i")
+      done
+      #dump on error
+      echo "${missing[@]}"
+    }
 
-  function make_dir() {
-    local BUILD_DIR=$1
-    started "Looking for ${BUILD_DIR}"
-    mkdir -p "$BUILD_DIR"
-    if [ $? -eq 0 ]
-      then
-        updated "Created directory ${white}${BUILD_DIR}${reset}"
-        true
-      else
-        problem "Cannot build ${BUILD_DIR} directory"
-        false
-    fi 
-  }
+    # for i in "${sv[@]}"; do
+    #   [ -n "${!i}" ] && [ -r "${!i}" ] && sv=(${sv[@]//*$i*}) || err+=("$i")
+    # done
 
   #----------------------
 

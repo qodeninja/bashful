@@ -16,29 +16,25 @@
 
 
   #-----------------------------------------------------------------
-    function bashful_welcome() {
-      welcome_banner "$1"
-      #(sleep 60) &
-      #spinner $!
-    }
 
 
     function bashful_install() {
-      bashful_welcome "Bashful Util"
+      welcome_banner "Bashful Util"
+
+      update_path "${BASHFUL_SETUP_BIN}"
+      update_path "${PATH_BASHFUL_BIN}"
 
       backup_sys_profile
       do_setup
       do_install
 
       check_profile_state
-      echo $SECONDS
+
       if [ $? -ne 0 ]; then
         bashful_profile
       fi
 
-      #rmobj $PATH_BASHFUL_USER_INCOMPLETE_FILE
-      #if SETUP_DONE && INSTALL_DONE => REMOVE INC
-      #
+
       bashful_exit
     }
 
@@ -56,7 +52,7 @@
     }
 
     function bashful_uninstall() {
-      bashful_welcome "Bashful Util"
+      welcome_banner "Bashful Util"
       fake_uninstall_bashful
     }
 
@@ -80,13 +76,34 @@
   #-----------------------------------------------------------------
 
 
+
   #-----------------------------------------------------------------
-    
+    function welcome_banner() {
+      echo ${purple};
+      command_exists xtitle && xtitle $1
+      command_exists figlet && figlet $1 || header $1
+      echo ${reset};
+    }
+  #-----------------------------------------------------------------
+  
+
+
+  #-----------------------------------------------------------------
+    function fake_uninstall_bashful(){
+      remobj $PATH_BASHFUL_ROOT
+      remobj $PATH_BASHFUL_USER_INSTALL_FILE
+      remobj $PATH_BASHFUL_PROFILES
+      rm -f ./prof*.tar
+    }
+  #-----------------------------------------------------------------
+
+
+
+  #-----------------------------------------------------------------
+  ##  
     function check_run() {
-      #name=$1;flag=$2;tester=$3;runner=$4
       local try=0;
       local param=("${@}")
-      #debug "${param[0]} ${!param[1]} ${param[1]} ${param[3]} $SECONDS"
       if "${param[2]}" $try; then pass "${param[0]} OK"
       else
         warn "${param[0]} not complete, attempting recovery"
@@ -104,34 +121,6 @@
       fi
     }
 
-
-    function check_paths() {
-      local retry=$1
-      local name=$2
-      [ $retry -eq 0 ] && header "$name Check" || header "Retry $name Check (${retry})" 
-
-      local ERROR_MSG=()
-      local lbl="setup"
-      local err="not ready"
-      local paths=("${@}")
-
-      if [ ${#ERROR_MSG[@]} -gt 0 ]; then
-        for data in "${ERROR_MSG[@]}"
-        do
-          if [ -n "$data" ]; then
-            failed "[$lbl] $data $err"
-            #add to repair list
-          fi
-        done
-        #fail "Setup validation failed"
-        return 1
-      else
-        #pass "Setup Check Done!"
-        STAT_SETUP_DONE=1
-        return 0
-      fi 
-
-    }
   #-----------------------------------------------------------------
 
 
@@ -149,7 +138,12 @@
 
     function do_setup() {
       check_run "setup" "STAT_SETUP_DONE" check_setup_state run_setup
+
+      local dirs=("BASHFUL_SETUP_ROOT" "BASHFUL_SETUP_BINz" "PATH_BASHFUL_INSTALL" "PATH_BASHFUL_ROOT" "PATH_BASHFUL_BIN" )
+      MISSING="$(missing_dirs ${dirs[@]})"
+      echo -e "(${#MISSING[@]}) ${MISSING[@]} "
     }
+
 
     function check_setup_state() {
       local retry=$1
@@ -265,53 +259,31 @@
   #-----------------------------------------------------------------
 
 
-
   #-----------------------------------------------------------------
-    function welcome_banner() {
-      echo ${purple};
-      command_exists xtitle && xtitle $1
-      command_exists figlet && figlet $1 || header $1
-      echo ${reset};
-    }
-  #-----------------------------------------------------------------
-  
 
-
-  #-----------------------------------------------------------------
-    function fake_install_bashful(){
-      info "Fake installing bashful"
-      mkdir -p $PATH_BASHFUL_ROOT
-      touch $PATH_BASHFUL_USER_INSTALL_FILE
+    function run_profile() {
+        start_spinner "Making Profilies"
+          sleep 3
+          build_bashful_profile
+        stop_spinner $?
     }
 
-    function fake_uninstall_bashful(){
-      remobj $PATH_BASHFUL_ROOT
-      remobj $PATH_BASHFUL_USER_INSTALL_FILE
-      remobj $PATH_BASHFUL_PROFILES
-      rm -f ./prof*.tar
+    function bashful_profile() {
+      if [ $OPT_PROFILE -eq 1 ]; then
+        start_spinner "Making Profilies"
+          sleep 3
+          build_bashful_profile
+        stop_spinner $?
+      else
+        concern "Bash starter profile not created"
+      fi
     }
-  #-----------------------------------------------------------------
 
-  #-----------------------------------------------------------------
-    function build_dir() {
-        local BUILD_DIR=$1
-        started "Bashful looking for ${BUILD_DIR}"
-        mkdir -p "$BUILD_DIR"
-        if [ $? -eq 0 ]
-          then
-            updated "Created directory ${white}${BUILD_DIR}${reset}"
-          else
-            problem "Cannot build bashful ${BUILD_DIR} directory"
-        fi 
-    }
 
     function build_bashful_profile(){
       local PROFILE_NAME=${OPT_PROFILE_NAME:default}
             PATH_PROFILE="${PATH_BASHFUL_PROFILES}/${PROFILE_NAME}"
-
       started "Bashful creating profile ${PROFILE_NAME}"
-
-
       if [ ! -d $PATH_PROFILE ]; then
         touch_dir_files "${PATH_PROFILE}" .path .alias .env .cache .project .version
         updated "Bashful Profile (${cyan}${PROFILE_NAME}${reset}) profile started!"
@@ -353,8 +325,6 @@
         updated "Found original profile backup"
       #  util_tarup "profile-$(filetime)" "${FILES[@]}"
       fi
-
-
       
     }
   #-----------------------------------------------------------------
@@ -391,7 +361,6 @@
 
   #----------------------
     function exit_signal() {
-
       if [ $? -ne 0 ]; then exit_error $?; 
       else 
         info "[${OPT_COMMAND}] Finished."
