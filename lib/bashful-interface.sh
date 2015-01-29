@@ -27,29 +27,15 @@
       backup_sys_profile
       do_setup
       do_install
-
-      check_profile_state
-
-      if [ $? -ne 0 ]; then
-        bashful_profile
-      fi
-
+      do_profile
+      
+      header "Done" 
 
       bashful_exit
     }
 
 
 
-    function bashful_profile() {
-      if [ $OPT_PROFILE -eq 1 ]; then
-        start_spinner "Making Profilies"
-          sleep 3
-          build_bashful_profile
-        stop_spinner $?
-      else
-        concern "Bash starter profile not created"
-      fi
-    }
 
     function bashful_uninstall() {
       welcome_banner "Bashful Util"
@@ -106,7 +92,7 @@
       local param=("${@}")
       if "${param[2]}" $try; then pass "${param[0]} OK"
       else
-        warn "${param[0]} not complete, attempting recovery"
+        #warn "${param[0]} not complete, attempting recovery"
         #lazy setup
         while [ "${!param[1]}" -ne 1 ] && [ $try -lt 1 ]; do
           try=$((try + 1))
@@ -126,6 +112,10 @@
 
   #-----------------------------------------------------------------
 
+    function do_setup() {
+      check_run "setup" "STAT_SETUP_DONE" check_setup_state run_setup
+    }
+
     function run_setup() {
       start_spinner "Verifying Bashful Dirs"
         sleep 3
@@ -136,49 +126,33 @@
       stop_spinner $?
     }
 
-    function do_setup() {
-      check_run "setup" "STAT_SETUP_DONE" check_setup_state run_setup
-
-      local dirs=("BASHFUL_SETUP_ROOT" "BASHFUL_SETUP_BINz" "PATH_BASHFUL_INSTALL" "PATH_BASHFUL_ROOT" "PATH_BASHFUL_BIN" )
-      MISSING="$(missing_dirs ${dirs[@]})"
-      echo -e "(${#MISSING[@]}) ${MISSING[@]} "
-    }
 
 
     function check_setup_state() {
       local retry=$1
       [ $retry -eq 0 ] && header "Setup Check" || header "Retry Setup Check (${retry})" 
       STAT_SETUP_DONE=0  
-      local ERROR_MSG=()
       local lbl="setup"
       local err="not ready"
-      local sv=( "BASHFUL_SETUP_ROOT" "BASHFUL_SETUP_BIN" "PATH_BASHFUL_INSTALL" "PATH_BASHFUL_ROOT" "PATH_BASHFUL_BIN" )
+      local dirs=("BASHFUL_SETUP_ROOT" "BASHFUL_SETUP_BIN" "PATH_BASHFUL_INSTALL" "PATH_BASHFUL_ROOT" "PATH_BASHFUL_BIN" )
 
-      #bash deref ${!var}
-      for data in "${sv[@]}"
-      do
-        [ -n "${!data}" ] && [ -r "${!data}" ] && updated "[$lbl] ${!data} set" || ERROR_MSG+=("${data}")
-      done
-      #last check
-      inpath "${!sv[4]}" && updated "[setup] ~/.bashful/bin in PATH" || ERROR_MSG+=("[setup] <${sv[4]}> to PATH var")
-      #dump on error
-      if [ ${#ERROR_MSG[@]} -gt 0 ]; then
-        for data in "${ERROR_MSG[@]}"
-        do
-          if [ -n "$data" ]; then
-            failed "[$lbl] $data $err"
-            #add to repair list
-          fi
+      local MISSING="$(missing_dirs ${dirs[@]})"
+      MISSING=($MISSING)
+      inpath "${!dirs[4]}" || MISSING+=("${!dirs[4]}")
+      #&& updated "[setup] ~/.bashful/bin in PATH" 
+      #echo -e "Missing ${#MISSING[@]} (${MISSING[*]})"
+
+      if [ ${#MISSING[@]} -gt 0 ]; then
+        for i in "${MISSING[@]}"; do
+          failed "[$lbl] $i $err"
         done
-        #fail "Setup validation failed"
         return 1
       else
-        #pass "Setup Check Done!"
         STAT_SETUP_DONE=1
         return 0
-      fi 
-
+      fi
     }
+
   #-----------------------------------------------------------------
 
 
@@ -203,59 +177,29 @@
     function check_install_state() {
       local retry=$1
       [ $retry -eq 0 ] && header "Install Check" || header "Retry Install Check (${retry})" 
-      STAT_INSTALL_DONE=0   
-      local ERROR_MSG=()
-      local lbl="install"
+      STAT_INSTALL_DONE=0  
+      local lbl="setup"
       local err="not ready"
-      local sv=( "PATH_BASHFUL_BACKUP" "PATH_BASHFUL_INSTALL"  \
-                 "PATH_BASHFUL_ROOT"     \
-                 "PATH_BASHFUL_BIN"      \
-                 "PATH_BASHFUL_INSTALL_FILE" \
-                 "PATH_BASHFUL_PROFILES" )
-
-      #export OK
-      #setup OK
-      #profile backup OK
-      #install OK
-      #profile OK
-
-      for data in "${sv[@]}"
-      do
-        #echo "data( ${data} )"
-        [ ! -z "${data}" ] && [ -n "${!data}" ] && [ -r "${!data}" ] && updated "[$lbl] ${!data} set" || ERROR_MSG+=("${data}")
-      done
-
-      #do we need this?
-      if [ ! -f $PATH_BASHFUL_INCOMPLETE_FILE ]; then
-          updated "[install] No incomplete marker ~/.bashful/.incomplete"
-        else
-          STAT_INSTALL_DONE=0
-          ERROR_MSG+=("PATH_BASHFUL_INCOMPLETE_FILE") 
-          echo "$PATH_BASHFUL_INCOMPLETE_FILE"
-      fi
-
-      #dump on error
-      if [ ${#ERROR_MSG[@]} -gt 0 ]; then
-        for data in "${ERROR_MSG[@]}"
-        do
-          if [ -n "$data" ]; then
-            failed "[$lbl] $data $err"
-            #add to repair list
-          fi
+      local dirs=( "PATH_BASHFUL_BACKUP" "PATH_BASHFUL_INSTALL"  \
+                   "PATH_BASHFUL_ROOT"     \
+                   "PATH_BASHFUL_BIN"      \
+                   "PATH_BASHFUL_INSTALL_FILE" \
+                   "PATH_BASHFUL_PROFILES" )
+      #&& updated "[$lbl] ${!data} set" 
+      local MISSING="$(missing_dirs ${dirs[@]})"
+      MISSING=($MISSING)
+      if [ ${#MISSING[@]} -gt 0 ]; then
+        for i in "${MISSING[@]}"; do
+          failed "[$lbl] $i $err"
         done
-        #fail "Install validation failed"
         return 1
       else
-        #pass "Setup Check Done!"
         STAT_INSTALL_DONE=1
         return 0
-      fi 
-
+      fi
     }
 
-    function check_profile_state() {
-      STAT_PROFILE_DONE=0
-    }
+
   #-----------------------------------------------------------------
 
 
@@ -268,20 +212,42 @@
         stop_spinner $?
     }
 
-    function bashful_profile() {
-      if [ $OPT_PROFILE -eq 1 ]; then
-        start_spinner "Making Profilies"
-          sleep 3
-          build_bashful_profile
-        stop_spinner $?
-      else
-        concern "Bash starter profile not created"
-      fi
+    function do_profile() {
+      check_run "profile" "STAT_PROFILE_DONE" check_profile_state run_profile
     }
 
 
+    function check_profile_state() {
+      local retry=$1
+      [ $retry -eq 0 ] && header "Profile Check" || header "Retry Profile Check (${retry})" 
+      STAT_PROFILE_DONE=0   
+      local PROFILE_NAME=${OPT_PROFILE_NAME:-$USER}
+            PATH_PROFILE="${PATH_BASHFUL_PROFILES}/${PROFILE_NAME}"
+      local ERROR_MSG=()
+      local lbl="profile"
+      local err="not ready"
+      local dirs=( "PATH_BASHFUL_ROOT" "PATH_BASHFUL_PROFILES" "PATH_PROFILE")
+
+      #check profile path
+      #check default profile for current host
+      #check all profiles for host
+      
+      local MISSING="$(missing_dirs ${dirs[@]})"
+      MISSING=($MISSING)
+      if [ ${#MISSING[@]} -gt 0 ]; then
+        for i in "${MISSING[@]}"; do
+          failed "[$lbl] $i $err"
+        done
+        return 1
+      else
+        updated "Default Profile (${cyan}${PROFILE_NAME}${reset}) found!"
+        STAT_PROFILE_DONE=1
+        return 0
+      fi
+    }
+
     function build_bashful_profile(){
-      local PROFILE_NAME=${OPT_PROFILE_NAME:default}
+      local PROFILE_NAME=${OPT_PROFILE_NAME:-$USER}
             PATH_PROFILE="${PATH_BASHFUL_PROFILES}/${PROFILE_NAME}"
       started "Bashful creating profile ${PROFILE_NAME}"
       if [ ! -d $PATH_PROFILE ]; then
@@ -291,8 +257,10 @@
         problem "Careful ${PROFILE_NAME} profile already exists"
       fi
     }
-
-
+  #-----------------------------------------------------------------
+  #
+  #
+  #-----------------------------------------------------------------
     function backup_sys_profile() {
       local FILES=("${USER_PROFILE_FILES[@]}")
       header "Backup Bash Profile"
@@ -310,7 +278,7 @@
       #echo -e "\nbackup file is $BAK_PROFILE_ORIGINAL"
 
       if [ ! -f "${BAK_PROFILE_ORIGINAL}" ] && [ ! -f "./${VAR_TAR_NAME}.tar" ]; then
-        warn "profile original not found at ${BAK_PROFILE_ORIGINAL}"
+        warn "profile original not found!"
         util_tarup "${VAR_TAR_NAME}" "${FILES[@]}"
 
         if [ $? -eq 0 ]; then

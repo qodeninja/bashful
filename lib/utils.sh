@@ -170,10 +170,13 @@
     function missing_dirs() {
       local missing=()
       local sv=("${@}")  
-      for i in "${!sv[@]}"; do
-        local p="${sv[$i]}"
-        [ -n "${!p}" ] && [ -r "${!p}" ] || missing+=("$i")
-      done
+      for i in "${sv[@]}"; do
+        [ -n "${!i}" ] && [ -r "${!i}" ] || missing+=("$i")
+      done 
+      # for i in "${!sv[@]}"; do
+      #   local p="${sv[$i]}"
+      #   [ -n "${!p}" ] && [ -r "${!p}" ] || missing+=("$i")
+      # done
       #dump on error
       echo "${missing[@]}"
     }
