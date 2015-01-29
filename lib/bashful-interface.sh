@@ -86,6 +86,35 @@
 
 
   #-----------------------------------------------------------------
+    ##check_state HEADER LABEL DIRS
+    #
+    function check_state() {
+      local try=0;
+      local retry=$1; shift
+      local label=$1; shift
+      local dirs=("${@}")
+
+      [ $retry -eq 0 ] && header "${label}" || header "Retry ${label} (${retry})" 
+
+      for i in "${dirs[@]}"; do
+        info "${!i} "
+      done
+
+      local MISSING="$(missing_dirs ${dirs[@]})"
+      MISSING=($MISSING)
+      echo -e "Missing ${#MISSING[@]} (${MISSING[*]})" 
+
+      if [ ${#MISSING[@]} -gt 0 ]; then
+        for i in "${MISSING[@]}"; do
+          failed "[$label] $i not ready" 
+        done
+        echo 1
+      else
+        echo 0
+      fi
+    }
+
+
   ##  
     function check_run() {
       local try=0;
@@ -113,12 +142,20 @@
   #-----------------------------------------------------------------
 
     function do_setup() {
+      local VAR_SETUP_PATHS=("BASHFUL_SETUP_ROOTz" "BASHFUL_SETUP_BIN" "PATH_BASHFUL_INSTALL" "PATH_BASHFUL_ROOT" "PATH_BASHFUL_BIN")
+      local VAR_SETUP_LABEL="setup"
+      local VAR_SETUP_EXEC="run_setup"
+      local VAR_SETUP_ARGS=( "$VAR_SETUP_LABEL" "$VAR_SETUP_EXEC" "${VAR_SETUP_PATHS[@]}" )
+      
+      #check_run $LABEL $EXEC $DIRS 
+      #check_run2 "${VAR_SETUP_ARGS[@]}"
+
       check_run "setup" "STAT_SETUP_DONE" check_setup_state run_setup
     }
 
     function run_setup() {
       start_spinner "Verifying Bashful Dirs"
-        sleep 3
+        sleep 1
         make_dirs "${PATH_BASHFUL_ROOT}" "${PATH_BASHFUL_BIN}" "${PATH_BASHFUL_PROFILES}" "${PATH_BASHFUL_BACKUP}"
         update_path "${BASHFUL_SETUP_BIN}"
         update_path "${PATH_BASHFUL_BIN}"
@@ -161,7 +198,7 @@
   #-----------------------------------------------------------------
     function run_install() {
       start_spinner "Verifying Install Dirs"
-        sleep 3
+        sleep 1
         make_dirs "${PATH_BASHFUL_ROOT}" "${PATH_BASHFUL_BIN}" "${PATH_BASHFUL_PROFILES}" "${PATH_BASHFUL_BACKUP}"
         update_path "${PATH_BASHFUL_BIN}"
         touch $PATH_BASHFUL_INSTALL_FILE 
@@ -204,17 +241,30 @@
 
 
   #-----------------------------------------------------------------
+    # #vars
+    # PROFILE_NAME=${OPT_PROFILE_NAME:-$USER}
+    # PATH_MAIN_PROFILE="${PATH_BASHFUL_PROFILES}/${PROFILE_NAME}"
+    # #header
+    # local VAR_PROFILE_HEADER='Profile Check'
+    # #paths
+    # local VAR_PROFILE_PATHS=( "PATH_BASHFUL_ROOT" "PATH_BASHFUL_PROFILES" "PATH_MAIN_PROFILE")
+    # #label
+    # local VAR_PROFILE_LABEL='profile'
+    # #state
+    # local VAR_PROFILE_STAT='STAT_PROFILE_DONE'
 
     function run_profile() {
         start_spinner "Making Profilies"
-          sleep 3
+          sleep 1
           build_bashful_profile
         stop_spinner $?
     }
 
     function do_profile() {
-      check_run "profile" "STAT_PROFILE_DONE" check_profile_state run_profile
+      check_run "$VAR_PROFILE_LABEL" "STAT_PROFILE_DONE" check_profile_state run_profile
+      #check_state "$VAR_PROFILE_HEADER" "$VAR_PROFILE_LABEL" "${VAR_PROFILE_PATHS[@]}"
     }
+
 
 
     function check_profile_state() {
@@ -223,7 +273,6 @@
       STAT_PROFILE_DONE=0   
       local PROFILE_NAME=${OPT_PROFILE_NAME:-$USER}
             PATH_PROFILE="${PATH_BASHFUL_PROFILES}/${PROFILE_NAME}"
-      local ERROR_MSG=()
       local lbl="profile"
       local err="not ready"
       local dirs=( "PATH_BASHFUL_ROOT" "PATH_BASHFUL_PROFILES" "PATH_PROFILE")
